@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#171613">
+  <meta name="description" content="BRAZA FORTE — hambúrguer artesanal na brasa em Sapezal. Premium, acolhedor e sem frescura. Peça agora.">
+  <title>BRAZA FORTE — Fogo & Brasa.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* Adumu Regular - Fonte oficial da marca */
+    @font-face {
+      font-family: 'Adumu';
+      src: url('./fonts/Adumu.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      /* Paleta Oficial BRAZA FORTE */
+      --black: #171613;       /* Carvão Principal */
+      --charcoal: #211F1B;    /* Carvão Suave */
+      --steel: #34312C;       /* Ferro */
+      --white: #FFFAF1;       /* Branco Quente */
+      --paper: #F1ECDF;       /* Papel Quente */
+      --paper-deep: #E4DCCD;  /* Papel Profundo */
+      --ember: #E97B34;       /* Laranja Brasa */
+      --gold: #FFD27A;        /* Dourado */
+      --red-coal: #B84029;    /* Vermelho Carvão (detalhes) */
+      --ember-glow: rgba(233, 123, 52, 0.4);
+      --gradient-ember: linear-gradient(135deg, #FFD579 0%, #FFB34C 30%, #E97B34 70%, #C64C34 100%);
+
+      /* Tipografia */
+      --font-display: 'Adumu', 'Anton', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --container: min(100% - 32px, 1200px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--black);
+      color: var(--paper);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Textura de ruído industrial (ajustada para paleta quente) */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+    }
+
+    a { color: inherit; text-decoration: none; transition: color 0.2s ease; }
+    a:hover { color: var(--ember); }
+    img { display: block; max-width: 100%; height: auto; }
+
+    /* Utilitários de Layout */
+    .shell { width: var(--container); margin-inline: auto; position: relative; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+
+    /* Tipografia Oficial: Adumu Regular + DM Sans */
+    h1, h2, h3, .brand-name { font-family: var(--font-display); text-transform: uppercase; line-height: 0.9; letter-spacing: 0.02em; font-weight: 400; }
+    h1 { font-size: clamp(4rem, 18vw, 11rem); color: var(--paper); position: relative; z-index: 2; text-shadow: 0 4px 30px rgba(233,123,52,0.15); }
+    h1 span { display: block; color: var(--ember); transform: translateX(-3%); }
+    h2 { font-size: clamp(3rem, 10vw, 6rem); margin-bottom: 1.5rem; color: var(--white); }
+    h2 em { font-style: normal; color: var(--ember); }
+    p, li, .hero-sub, .story-text p, .address-box span, .dock-text small, .footer, .review-subtitle { font-family: var(--font-body); color: var(--paper-deep); }
+
+    .label {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+    .label::before { content: ""; width: 40px; height: 2px; background: var(--gradient-ember); }
+
+    /* Botões com Gradiente de Brasa */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 56px;
+      padding: 0 28px;
+      background: var(--gradient-ember);
+      color: var(--black);
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: none;
+      transition: all 0.2s ease;
+      clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+    }
+    .btn:hover, .btn:focus-visible {
+      filter: brightness(1.15);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px var(--ember-glow);
+      color: var(--black);
+    }
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--paper-deep);
+      color: var(--paper);
+    }
+    .btn-outline:hover {
+      background: var(--paper);
+      color: var(--black);
+      border-color: var(--paper);
+    }
+
+    /* Header Compacto e Funcional */
+    .header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 16px 0;
+      background: rgba(23,22,19,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(241,236,223,0.08);
+    }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { width: 44px; height: 44px; object-fit: contain; background: #fff; border-radius: 4px; }
+    .brand-name { font-family: var(--font-display); font-size: 1.2rem; letter-spacing: 0.05em; line-height: 1; color: var(--paper); }
+    .brand-name small { display: block; font-family: var(--font-body); font-size: 0.6rem; color: var(--gold); letter-spacing: 0.15em; margin-top: 4px; font-weight: 500; }
+    .header-cta { min-height: 44px; padding: 0 18px; font-size: 0.9rem; }
+
+    /* HERO COM CARROSSEL */
+    .hero-stage {
+      position: relative;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      overflow: hidden;
+      padding-bottom: calc(100px + var(--safe-b));
+    }
+    .hero-carousel {
+      position: absolute; inset: 0; z-index: 0;
+    }
+    .hero-slide {
+      position: absolute; inset: 0;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .hero-slide.active { opacity: 1; }
+    .hero-slide img {
+      width: 100%; height: 100%; object-fit: cover;
+      filter: brightness(0.55) contrast(1.1);
+    }
+    .hero-overlay {
+      position: absolute; inset: 0; z-index: 1;
+      background: linear-gradient(to top, var(--black) 5%, rgba(23,22,19,0.3) 50%, rgba(23,22,19,0.6) 100%);
+    }
+    .hero-content {
+      position: relative; z-index: 10;
+      padding: 0 20px 40px;
+      text-align: center;
+    }
+    .hero-title {
+      font-family: var(--font-display); font-size: clamp(3.5rem, 16vw, 9rem);
+      line-height: 0.85; text-transform: uppercase; letter-spacing: 0.02em;
+      color: var(--paper);
+      margin-bottom: 12px;
+      text-shadow: 0 4px 30px rgba(233,123,52,0.2);
+    }
+    .hero-title span { display: block; color: var(--ember); transform: translateX(-3%); }
+    .hero-sub { font-size: 1rem; color: var(--paper-deep); max-width: 360px; margin: 0 auto 24px; line-height: 1.5; }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* Carousel Controls */
+    .carousel-dots {
+      position: absolute; bottom: calc(20px + var(--safe-b)); left: 50%; transform: translateX(-50%);
+      z-index: 12; display: flex; gap: 8px;
+    }
+    .carousel-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.3); border: none; cursor: pointer;
+      transition: all 0.3s ease; padding: 0;
+    }
+    .carousel-dot.active { background: var(--ember); transform: scale(1.3); }
+
+    /* Info Strip (Review + Address compacto) */
+    .info-strip {
+      background: var(--charcoal); border-bottom: 1px solid var(--steel);
+      padding: 20px 0;
+    }
+    .info-strip-inner {
+      display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center;
+    }
+    .info-review { display: flex; align-items: center; gap: 10px; }
+    .info-stars { color: var(--gold); font-size: 1rem; letter-spacing: 2px; }
+    .info-review-text { font-family: var(--font-body); font-size: 0.85rem; color: var(--paper-deep); }
+    .info-address { font-family: var(--font-body); font-size: 0.85rem; color: var(--paper-deep); display: flex; align-items: center; gap: 8px; }
+    .info-address svg { width: 16px; height: 16px; color: var(--ember); flex: none; }
+
+    @media (min-width: 768px) {
+      .hero-stage { min-height: 100vh; justify-content: center; padding-bottom: 0; }
+      .hero-content { text-align: left; padding: 0 0 0 8%; max-width: 55%; }
+      .hero-actions { justify-content: flex-start; }
+      .hero-sub { margin: 0 0 28px; }
+      .info-strip-inner { flex-direction: row; justify-content: space-between; text-align: left; }
+      .carousel-dots { bottom: 30px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-slide { transition: none; }
+    }
+
+    /* Ticker / Fita Industrial */
+    .ticker {
+      background: var(--charcoal);
+      color: var(--paper);
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 14px 0;
+      border-block: 1px solid var(--steel);
+    }
+    .ticker-track {
+      display: inline-flex;
+      animation: scroll 20s linear infinite;
+    }
+    .ticker-item {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      color: var(--paper-deep);
+    }
+    .ticker-item::after { content: "✦"; font-size: 0.8em; color: var(--gold); opacity: 0.7; }
+
+    /* Seção História: Assimétrica e Rústica */
+    .story { padding: 80px 0; background: var(--charcoal); position: relative; border-top: 1px solid var(--steel); }
+    .story-grid { display: grid; gap: 40px; }
+    .story-img-wrap {
+      position: relative;
+      border: 1px solid var(--steel);
+      padding: 12px;
+      background: var(--black);
+    }
+    .story-img-wrap img { width: 100%; height: auto; filter: grayscale(0.2) contrast(1.1); }
+    .stamp {
+      position: absolute;
+      bottom: -20px;
+      right: -10px;
+      width: 90px;
+      height: 90px;
+      background: var(--gradient-ember);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      line-height: 1.1;
+      text-transform: uppercase;
+      color: var(--black);
+      border: 2px dashed rgba(23,22,19,0.4);
+      transform: rotate(-15deg);
+      box-shadow: 0 8px 20px rgba(233,123,52,0.3);
+    }
+    .story-text p { font-size: 1.1rem; line-height: 1.6; color: var(--paper-deep); margin-bottom: 24px; max-width: 60ch; }
+    .specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--steel); border: 1px solid var(--steel); margin: 32px 0; }
+    .spec { background: var(--charcoal); padding: 20px 16px; text-align: center; }
+    .spec b { display: block; font-family: var(--font-display); font-size: 1.3rem; color: var(--paper); margin-bottom: 4px; }
+    .spec small { font-size: 0.7rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; }
+
+    /* CTA Band: Alto Contraste */
+    .cta-band {
+      background: var(--ember);
+      color: var(--black);
+      padding: 60px 0;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-band h2 { color: var(--paper); -webkit-text-stroke: 0; margin: 0 0 24px; font-size: clamp(2.5rem, 8vw, 5rem); }
+    .cta-band .btn { background: var(--gradient-ember); color: var(--black); border: none; }
+    .cta-band .btn:hover { filter: brightness(1.15); color: var(--black); }
+
+    /* Visita / Mapa Estilizado */
+    .visit { padding: 80px 0; border-top: 1px solid var(--steel); }
+    .visit-grid { display: grid; gap: 40px; }
+    .address-box {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      border-left: 4px solid var(--ember);
+      padding-left: 20px;
+      margin: 24px 0;
+    }
+    .address-box strong { display: block; color: var(--paper); font-size: 1.4rem; margin-bottom: 4px; }
+    .address-box span { color: var(--paper-deep); }
+    .map-frame {
+      aspect-ratio: 16/9;
+      background: var(--steel);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--steel);
+      display: grid;
+      place-items: center;
+    }
+    .map-placeholder {
+      text-align: center;
+      color: var(--paper-deep);
+      font-size: 0.9rem;
+    }
+    .map-pin-icon { width: 48px; height: 48px; color: var(--ember); margin-bottom: 12px; }
+
+    /* Galeria Editorial */
+    .gallery { padding: 80px 0; background: var(--black); border-top: 1px solid var(--steel); overflow: hidden; }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .gallery-item {
+      position: relative;
+      aspect-ratio: 1/1;
+      overflow: hidden;
+      border: 1px solid var(--steel);
+      background: var(--charcoal);
+    }
+    .gallery-item.wide { grid-column: span 2; aspect-ratio: 16/9; }
+    .gallery-item img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+      filter: grayscale(0.2) contrast(1.05);
+    }
+    .gallery-item:hover img { transform: scale(1.05); filter: grayscale(0) contrast(1.1); }
+    .gallery-caption {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 20px 16px 16px;
+      background: linear-gradient(to top, rgba(23,22,19,0.9), transparent);
+      font-family: var(--font-display); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--paper);
+      pointer-events: none;
+    }
+
+    /* Avaliação Google */
+    .review-band {
+      padding: 60px 0; background: var(--charcoal); border-top: 1px solid var(--steel);
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .review-stars { color: var(--gold); font-size: 1.8rem; letter-spacing: 4px; margin-bottom: 16px; line-height: 1; }
+    .review-title { font-family: var(--font-display); font-size: clamp(1.8rem, 5vw, 3rem); text-transform: uppercase; margin-bottom: 12px; line-height: 1; color: var(--paper); }
+    .review-subtitle { color: var(--paper-deep); font-size: 1rem; margin-bottom: 28px; max-width: 500px; margin-inline: auto; line-height: 1.5; }
+    .btn-review {
+      display: inline-flex; align-items: center; gap: 10px;
+      min-height: 52px; padding: 0 24px;
+      background: transparent; border: 2px solid var(--paper-deep); color: var(--paper);
+      font-family: var(--font-body); font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em;
+      transition: all 0.2s ease;
+    }
+    .btn-review:hover, .btn-review:focus-visible {
+      background: var(--paper); color: var(--black); border-color: var(--paper); transform: translateY(-2px);
+    }
+
+    /* WhatsApp Flutuante */
+    .wa-float {
+      position: fixed; z-index: 95;
+      bottom: calc(90px + var(--safe-b)); right: 16px;
+      display: flex; align-items: center; gap: 10px;
+      background: var(--gradient-ember); color: var(--black);
+      padding: 12px 18px; border-radius: 50px;
+      font-family: var(--font-body); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.02em;
+      box-shadow: 0 6px 24px rgba(233,123,52,0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-decoration: none;
+    }
+    .wa-float:hover, .wa-float:focus-visible {
+      transform: translateY(-3px); box-shadow: 0 10px 30px rgba(233,123,52,0.45);
+      color: var(--black);
+    }
+    .wa-float svg { width: 22px; height: 22px; flex: none; fill: currentColor; }
+    .wa-float-label { white-space: nowrap; }
+
+    /* Footer Minimalista */
+    .footer { padding: 40px 0 calc(100px + var(--safe-b)); border-top: 1px solid var(--steel); font-size: 0.8rem; color: var(--paper-deep); }
+    .footer-inner { display: flex; flex-direction: column; gap: 20px; align-items: flex-start; }
+    .footer-links { display: flex; gap: 20px; flex-wrap: wrap; }
+    .footer-links a { color: var(--paper-deep); }
+    .footer-links a:hover { color: var(--ember); text-decoration: underline; }
+
+    /* Mobile Dock Fixo */
+    .mobile-dock {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 90;
+      background: rgba(33,31,27,0.95);
+      border: 1px solid var(--steel);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+    .dock-text b { display: block; font-family: var(--font-display); font-size: 1rem; color: var(--paper); }
+    .dock-text small { font-size: 0.7rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.05em; }
+    .dock-btn { flex: none; min-height: 48px; padding: 0 20px; font-size: 0.9rem; }
+
+    /* Animações */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes scroll { to { transform: translateX(-50%); } }
+
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* Desktop Adjustments */
+    @media (min-width: 768px) {
+      .header { padding: 20px 0; }
+      .brand-logo { width: 56px; height: 56px; }
+      .brand-name { font-size: 1.5rem; }
+      .desktop-nav { display: flex; gap: 32px; align-items: center; }
+      .desktop-nav a { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--paper-deep); transition: color 0.2s; }
+      .desktop-nav a:hover { color: var(--ember); }
+
+      .hero-stage { justify-content: center; padding-bottom: 0; }
+      .hero-content { padding-top: 0; width: 60%; }
+      .hero-bg img { object-position: center 50%; }
+      .deco-circle { top: 20%; right: 5%; width: 200px; height: 200px; }
+
+      .story-grid { grid-template-columns: 1fr 1fr; align-items: center; gap: 60px; }
+      .story-img-wrap { order: 2; }
+      .story-text { order: 1; }
+
+      .visit-grid { grid-template-columns: 1fr 1fr; align-items: center; gap: 60px; }
+      .map-frame { aspect-ratio: 1/1; }
+
+      .footer-inner { flex-direction: row; justify-content: space-between; align-items: center; }
+      .mobile-dock { display: none; }
+      .footer { padding-bottom: 40px; }
+    }
+
+    @media (min-width: 1200px) {
+      h1 { font-size: 12rem; }
+      .hero-content { width: 50%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="shell header-inner">
+      <a href="#inicio" class="brand" aria-label="BRAZA FORTE - Início">
+        <img src="logo.jpeg" alt="Logo BRAZA FORTE" class="brand-logo">
+        <div class="brand-name">BRAZA FORTE<small>HAMBURGUERIA ARTESANAL</small></div>
+      </a>
+      <nav class="desktop-nav" style="display:none;"> <!-- Ativado via CSS media query -->
+        <a href="#historia">A Brasa</a>
+        <a href="#visite">Localização</a>
+      </nav>
+      <a href="#pedir" class="btn header-cta" data-link="order">Pedir Agora</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO COM CARROSSEL -->
+    <section id="inicio" class="hero-stage">
+      <div class="hero-carousel" id="heroCarousel" aria-label="Fotos dos lanches BRAZA FORTE">
+        <div class="hero-slide active"><img src="fotos/01B61CEB-E24C-4087-B231-B59C25F0C1FE_4_5005_c.jpeg" alt="Hambúrguer BRAZA FORTE com queijo derretendo" fetchpriority="high"></div>
+        <div class="hero-slide"><img src="fotos/12C10759-A919-4E12-9C0C-C3B7A1D33E83_4_5005_c.jpeg" alt="Combo BRAZA FORTE com batata e bebida" loading="lazy"></div>
+        <div class="hero-slide"><img src="fotos/1F8544D8-E420-4DAA-8EC4-3293616FBA18_4_5005_c.jpeg" alt="Detalhe da carne suculenta na brasa" loading="lazy"></div>
+        <div class="hero-slide"><img src="fotos/22CB21E3-A476-4AE7-9CDB-DD0CBF200597_4_5005_c.jpeg" alt="Pão artesanal selado com ingredientes frescos" loading="lazy"></div>
+        <div class="hero-overlay"></div>
+      </div>
+      <div class="shell hero-content">
+        <h1 class="hero-title">O BRAZA<br><span>FORTE</span></h1>
+        <p class="hero-sub">Hambúrguer artesanal na brasa em Sapezal. Peça agora.</p>
+        <div class="hero-actions">
+          <a href="#pedir" class="btn" data-link="order">Fazer Pedido</a>
+          <a href="#" class="btn btn-outline" data-link="whatsapp">WhatsApp</a>
+        </div>
+      </div>
+      <div class="carousel-dots" role="tablist" aria-label="Navegação do carrossel">
+        <button class="carousel-dot active" data-slide="0" aria-label="Foto 1" role="tab"></button>
+        <button class="carousel-dot" data-slide="1" aria-label="Foto 2" role="tab"></button>
+        <button class="carousel-dot" data-slide="2" aria-label="Foto 3" role="tab"></button>
+        <button class="carousel-dot" data-slide="3" aria-label="Foto 4" role="tab"></button>
+      </div>
+    </section>
+
+    <!-- INFO STRIP: Avaliação + Endereço -->
+    <div class="info-strip">
+      <div class="shell info-strip-inner">
+        <a href="#" class="info-review" data-link="googleReview">
+          <span class="info-stars" aria-label="Avaliação no Google">★★★★★</span>
+          <span class="info-review-text">Ver avaliações no Google ↗</span>
+        </a>
+        <div class="info-address">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>Av. Rotary Internacional, 210 · Centro · Sapezal-MT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TICKER ATUALIZADO -->
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track">
+        <span class="ticker-item">O Braza Forte</span>
+        <span class="ticker-item">Sabor de Brasa</span>
+        <span class="ticker-item">Queijo Derretendo</span>
+        <span class="ticker-item">Pão Artesanal</span>
+        <span class="ticker-item">Carne Suculenta</span>
+        <span class="ticker-item">Experiência Premium</span>
+        <span class="ticker-item">Sapezal · MT</span>
+        <span class="ticker-item">Peça Agora</span>
+        <span class="ticker-item">O Braza Forte</span>
+        <span class="ticker-item">Sabor de Brasa</span>
+        <span class="ticker-item">Queijo Derretendo</span>
+        <span class="ticker-item">Pão Artesanal</span>
+        <span class="ticker-item">Carne Suculenta</span>
+        <span class="ticker-item">Experiência Premium</span>
+        <span class="ticker-item">Sapezal · MT</span>
+        <span class="ticker-item">Peça Agora</span>
+      </div>
+    </div>
+
+    <!-- HISTÓRIA / CONCEITO -->
+    <section id="historia" class="story">
+      <div class="shell story-grid">
+        <div class="story-text reveal">
+          <h2>O SABOR QUE<br><em>CONQUISTA.</em></h2>
+          <p>O BRAZA FORTE é referência em hambúrguer artesanal na brasa em Sapezal. Cada detalhe é pensado para entregar uma experiência premium: ingredientes selecionados, preparo cuidadoso e aquele sabor defumado inconfundível.</p>
+          <p>Mais do que um lanche, é um momento de prazer genuíno. Venha conhecer ou peça sem sair de casa.</p>
+
+          <div class="specs">
+            <div class="spec"><b>BRASA</b><small>Defumado Real</small></div>
+            <div class="spec"><b>CARNE</b><small>Blend Próprio</small></div>
+            <div class="spec"><b>ALMA</b><small>Rock & Fogo</small></div>
+          </div>
+
+          <a href="#pedir" class="btn btn-outline" data-link="order">Ver Cardápio</a>
+        </div>
+
+        <div class="story-img-wrap reveal">
+          <img src="burger-braza.jpg" alt="Detalhe da suculência do burger BRAZA FORTE" loading="lazy">
+          <div class="stamp">Feito<br>Na Hora<br>★</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA BAND -->
+    <section id="pedir" class="cta-band">
+      <div class="shell">
+        <h2>A FOME NÃO ESPERA.</h2>
+        <a href="#" class="btn" data-link="order">PEDIR AGORA PELO WHATSAPP</a>
+      </div>
+    </section>
+
+    <!-- GALERIA EDITORIAL -->
+    <section class="gallery reveal">
+      <div class="shell">
+        <div class="label">03 / Na Brasa</div>
+        <h2 style="margin-bottom: 32px;">SABOR QUE<br><em>APARECE.</em></h2>
+        <div class="gallery-grid">
+          <div class="gallery-item wide">
+            <img src="fotos/IMG_0361.jpeg" alt="Hambúrguer BRAZA FORTE com queijo derretendo e bacon crocante" loading="lazy">
+            <div class="gallery-caption">O clássico da casa</div>
+          </div>
+          <div class="gallery-item">
+            <img src="fotos/F508A39A-7E72-4FB6-A447-487FE62ADB6A_4_5005_c.jpeg" alt="Detalhe da suculência e textura da carne na brasa" loading="lazy">
+          </div>
+          <div class="gallery-item">
+            <img src="fotos/3B822B2D-B45D-4450-820F-FEC4BE09E154_1_105_c.jpeg" alt="Pão artesanal selado na manteiga com ingredientes frescos" loading="lazy">
+          </div>
+          <div class="gallery-item wide">
+            <img src="fotos/946F38F5-7E52-494D-A6FB-9AF92E2612C8_4_5005_c.jpeg" alt="Combo completo BRAZA FORTE com acompanhamento e bebida" loading="lazy">
+            <div class="gallery-caption">Experiência completa</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AVALIAÇÃO GOOGLE -->
+    <section class="review-band reveal">
+      <div class="shell">
+        <div class="review-stars" aria-label="5 estrelas">★★★★★</div>
+        <h2 class="review-title">Gostou? Avalie a gente!</h2>
+        <p class="review-subtitle">Sua opinião ajuda a manter o fogo aceso e a brasa sempre forte em Sapezal.</p>
+        <a href="#" class="btn-review" data-link="googleReview" target="_blank" rel="noopener noreferrer">
+          Avaliar no Google <span class="arrow">↗</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- VISITA / LOCALIZAÇÃO -->
+    <section id="visite" class="visit">
+      <div class="shell visit-grid">
+        <div class="visit-info reveal">
+          <div class="label">02 / Visite</div>
+          <h2>VEM PRA<br><em>BRAZA.</em></h2>
+
+          <div class="address-box">
+            <strong>Avenida Rotary Internacional, 210</strong>
+            <span>Centro · Ao lado da Academia Power Fit<br>Sapezal - MT</span>
+          </div>
+
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="#" class="btn" data-link="maps">Como Chegar</a>
+            <a href="#" class="btn btn-outline" data-link="whatsapp">Falar Conosco</a>
+          </div>
+        </div>
+
+        <a href="#" class="map-frame reveal" data-link="maps" aria-label="Abrir mapa da localização">
+          <div class="map-placeholder">
+            <svg class="map-pin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <p>ABRIR NO GOOGLE MAPS<br><small style="color:var(--ember)">CLIQUE PARA TRAÇAR ROTA</small></p>
+          </div>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="shell footer-inner">
+      <div>
+        <div class="brand-name" style="margin-bottom: 8px;">BRAZA FORTE</div>
+        <p>© <span id="year"></span> Todos os direitos reservados.</p>
+      </div>
+      <nav class="footer-links">
+        <a href="#inicio">Início</a>
+        <a href="#historia">Conceito</a>
+        <a href="#" data-link="whatsapp">WhatsApp</a>
+        <a href="#" data-link="maps">Mapa</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- WHATSAPP FLUTUANTE -->
+  <a href="#" class="wa-float" data-link="whatsapp" aria-label="Fale pelo WhatsApp">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+    <span class="wa-float-label">Fale pelo WhatsApp</span>
+  </a>
+
+  <!-- MOBILE DOCK -->
+  <aside class="mobile-dock">
+    <div class="dock-text">
+      <b>Deu Fome?</b>
+      <small>Peça sem sair de casa</small>
+    </div>
+    <a href="#" class="btn dock-btn" data-link="order">PEDIR</a>
+  </aside>
+
+  <script>
+    // CONFIGURAÇÃO CENTRALIZADA DA LOJA
+    const STORE = {
+      name: 'BRAZA FORTE',
+      phone: '5565920012601', // Formato internacional sem símbolos
+      orderUrl: '', // Deixar vazio para usar WhatsApp como fallback
+      address: 'Avenida Rotary Internacional, 210, Centro, Sapezal - MT',
+      mapsUrl: '', // Opcional: link direto do Google Maps
+      googleReviewUrl: '' // Link direto para avaliação no Google (pendente de confirmação)
+    };
+
+    // Geração automática de links
+    const waText = encodeURIComponent(`Olá! Vim pelo site da ${STORE.name} e quero ver o cardápio.`);
+    const waLink = `https://wa.me/${STORE.phone}?text=${waText}`;
+    const mapLink = STORE.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(STORE.address)}`;
+    const orderLink = STORE.orderUrl || waLink;
+    const reviewLink = STORE.googleReviewUrl || mapLink;
+
+    // Aplicação dos links nos elementos
+    document.querySelectorAll('[data-link="whatsapp"]').forEach(el => {
+      el.href = waLink; el.target = '_blank'; el.rel = 'noopener';
+    });
+    document.querySelectorAll('[data-link="maps"]').forEach(el => {
+      el.href = mapLink; el.target = '_blank'; el.rel = 'noopener';
+    });
+    document.querySelectorAll('[data-link="order"]').forEach(el => {
+      el.href = orderLink; el.target = '_blank'; el.rel = 'noopener';
+    });
+    document.querySelectorAll('[data-link="googleReview"]').forEach(el => {
+      el.href = reviewLink; el.target = '_blank'; el.rel = 'noopener';
+    });
+
+    // Ano dinâmico
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Observer para animações de entrada (respeitando reduced-motion)
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }});
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+    } else {
+      document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+    }
+
+    // Carrossel do Hero
+    const carousel = document.getElementById('heroCarousel');
+    const dots = document.querySelectorAll('.carousel-dot');
+    if (carousel && dots.length > 0) {
+      const slides = carousel.querySelectorAll('.hero-slide');
+      let current = 0;
+      let interval = null;
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const goTo = (index) => {
+        slides[current].classList.remove('active');
+        dots[current].classList.remove('active');
+        current = (index + slides.length) % slides.length;
+        slides[current].classList.add('active');
+        dots[current].classList.add('active');
+      };
+
+      const startAuto = () => {
+        if (prefersReducedMotion || slides.length < 2) return;
+        clearInterval(interval);
+        interval = setInterval(() => goTo(current + 1), 5000);
+      };
+
+      const stopAuto = () => clearInterval(interval);
+
+      dots.forEach(dot => {
+        dot.addEventListener('click', () => {
+          stopAuto();
+          goTo(parseInt(dot.dataset.slide, 10));
+          startAuto();
+        });
+      });
+
+      // Suporte a swipe/drag simples
+      let startX = 0;
+      carousel.addEventListener('touchstart', e => { startX = e.touches[0].clientX; stopAuto(); }, { passive: true });
+      carousel.addEventListener('touchend', e => {
+        const diff = e.changedTouches[0].clientX - startX;
+        if (Math.abs(diff) > 50) goTo(current + (diff < 0 ? 1 : -1));
+        startAuto();
+      }, { passive: true });
+
+      startAuto();
+    }
+  </script>
+</body>
+</html>
