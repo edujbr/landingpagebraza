@@ -44,16 +44,24 @@ Todas as informações dinâmicas estão centralizadas no objeto `STORE` dentro 
 const STORE = {
   name: 'BRAZA FORTE',
   phone: '5565920012601', // DDI + DDD + Número (apenas dígitos)
-  orderUrl: '',           // Link do sistema de pedidos (iFood/Próprio). Vazio = WhatsApp
+  orderUrl: 'https://www.brazaforte.com/', // Link oficial de pedidos/cardápio
   address: 'Avenida Rotary Internacional, 210, Centro, Sapezal - MT',
-  mapsUrl: ''             // Link direto do Google Maps (opcional)
+  mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Avenida+Rotary+Internacional,+210,+Centro,+Sapezal-MT',
+  googleReviewUrl: '' // PENDENTE: Inserir link direto de avaliação do Google aqui
 };
 ```
 
 ### Comportamento dos Links
 - **Botões de Pedido (`data-link="order"`):** Usam `orderUrl` se preenchido; caso contrário, redirecionam para o WhatsApp com mensagem pré-definida.
-- **WhatsApp (`data-link="whatsapp"`):** Abre compartilhamento direto com o número configurado.
-- **Mapa (`data-link="maps"`):** Usa `mapsUrl` ou gera busca automática pelo endereço no Google Maps.
+- **WhatsApp (`data-link="whatsapp"`):** Abre conversa direta com o número configurado.
+- **Mapa (`data-link="maps"`):** Usa `mapsUrl` configurado para rota/busca no Google Maps.
+- **Avaliação (`data-link="googleReview"`):** Usa `googleReviewUrl` se preenchido; caso contrário, usa WhatsApp como fallback seguro (não abre rota).
+
+## Identidade & Textos Atuais
+- **Nome no topo:** BRAZA FORTE (sem artigo "O")
+- **Hashtag oficial:** #VEMPROBRAZA (presente no rodapé como elemento gráfico)
+- **Chamada principal:** "Hambúrguer artesanal em Sapezal. Seu próximo favorito começa aqui."
+- **Textos removidos:** "100% na brasa", "01 / Conceito", "brasa de verdade", "O BRAZA FORTE"
 
 ## Acessibilidade & Performance
 
@@ -64,6 +72,6 @@ const STORE = {
 
 ## Próximos Passos (Dados Pendentes)
 
-- [ ] Preencher `orderUrl` com o link oficial do sistema de pedidos quando disponível.
+- [ ] Preencher `googleReviewUrl` com o link direto oficial de avaliação no Google.
 - [ ] Substituir placeholder do mapa por embed real ou imagem estática personalizada (opcional).
 - [ ] Adicionar fotos adicionais de pratos ou ambiente nas seções futuras.

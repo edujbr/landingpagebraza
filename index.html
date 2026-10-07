@@ -398,7 +398,13 @@
     .wa-float-label { white-space: nowrap; }
 
     /* Footer Minimalista */
-    .footer { padding: 40px 0 calc(100px + var(--safe-b)); border-top: 1px solid var(--steel); font-size: 0.8rem; color: var(--paper-deep); }
+    .footer { padding: 40px 0 calc(100px + var(--safe-b)); border-top: 1px solid var(--steel); font-size: 0.8rem; color: var(--paper-deep); position: relative; overflow: hidden; }
+    .footer-hashtag {
+      font-family: var(--font-display); font-size: clamp(3rem, 12vw, 7rem);
+      color: rgba(255,255,255,0.03); text-transform: uppercase; letter-spacing: -0.02em;
+      position: absolute; right: -10px; bottom: -15px; pointer-events: none; z-index: 0;
+      white-space: nowrap; line-height: 1; user-select: none;
+    }
     .footer-inner { display: flex; flex-direction: column; gap: 20px; align-items: flex-start; }
     .footer-links { display: flex; gap: 20px; flex-wrap: wrap; }
     .footer-links a { color: var(--paper-deep); }
@@ -496,8 +502,8 @@
         <div class="hero-overlay"></div>
       </div>
       <div class="shell hero-content">
-        <h1 class="hero-title">O BRAZA<br><span>FORTE</span></h1>
-        <p class="hero-sub">Hambúrguer artesanal na brasa em Sapezal. Peça agora.</p>
+        <h1 class="hero-title">BRAZA<br><span>FORTE</span></h1>
+        <p class="hero-sub">Hambúrguer artesanal em Sapezal. Seu próximo favorito começa aqui.</p>
         <div class="hero-actions">
           <a href="#pedir" class="btn" data-link="order">Fazer Pedido</a>
           <a href="#" class="btn btn-outline" data-link="whatsapp">WhatsApp</a>
@@ -552,7 +558,7 @@
       <div class="shell story-grid">
         <div class="story-text reveal">
           <h2>O SABOR QUE<br><em>CONQUISTA.</em></h2>
-          <p>O BRAZA FORTE é referência em hambúrguer artesanal na brasa em Sapezal. Cada detalhe é pensado para entregar uma experiência premium: ingredientes selecionados, preparo cuidadoso e aquele sabor defumado inconfundível.</p>
+          <p>BRAZA FORTE é referência em hambúrguer artesanal em Sapezal. Ingredientes selecionados, preparo cuidadoso e sabor marcante em cada detalhe.</p>
           <p>Mais do que um lanche, é um momento de prazer genuíno. Venha conhecer ou peça sem sair de casa.</p>
 
           <div class="specs">
@@ -647,6 +653,7 @@
   </main>
 
   <footer class="footer">
+    <div class="footer-hashtag" aria-hidden="true">#VEMPROBRAZA</div>
     <div class="shell footer-inner">
       <div>
         <div class="brand-name" style="margin-bottom: 8px;">BRAZA FORTE</div>
@@ -681,18 +688,19 @@
     const STORE = {
       name: 'BRAZA FORTE',
       phone: '5565920012601', // Formato internacional sem símbolos
-      orderUrl: '', // Deixar vazio para usar WhatsApp como fallback
+      orderUrl: 'https://www.brazaforte.com/', // Link oficial de pedidos/cardápio
       address: 'Avenida Rotary Internacional, 210, Centro, Sapezal - MT',
-      mapsUrl: '', // Opcional: link direto do Google Maps
-      googleReviewUrl: '' // Link direto para avaliação no Google (pendente de confirmação)
+      mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Avenida+Rotary+Internacional,+210,+Centro,+Sapezal-MT',
+      googleReviewUrl: '' // PENDENTE: Inserir link direto de avaliação do Google aqui
     };
 
     // Geração automática de links
-    const waText = encodeURIComponent(`Olá! Vim pelo site da ${STORE.name} e quero ver o cardápio.`);
+    const waText = encodeURIComponent(`Olá! Vim pelo site da ${STORE.name} e quero fazer um pedido.`);
     const waLink = `https://wa.me/${STORE.phone}?text=${waText}`;
-    const mapLink = STORE.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(STORE.address)}`;
+    const mapLink = STORE.mapsUrl;
     const orderLink = STORE.orderUrl || waLink;
-    const reviewLink = STORE.googleReviewUrl || mapLink;
+    // Fallback seguro para avaliação: se não houver link específico, usa WhatsApp para evitar abrir rota errada
+    const reviewLink = STORE.googleReviewUrl || waLink;
 
     // Aplicação dos links nos elementos
     document.querySelectorAll('[data-link="whatsapp"]').forEach(el => {
