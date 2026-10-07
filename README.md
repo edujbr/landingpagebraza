@@ -57,11 +57,14 @@ const STORE = {
 - **Mapa (`data-link="maps"`):** Usa `mapsUrl` configurado para rota/busca no Google Maps.
 - **Avaliação (`data-link="googleReview"`):** Usa `googleReviewUrl` se preenchido; caso contrário, usa WhatsApp como fallback seguro (não abre rota).
 
-## Identidade & Textos Atuais
-- **Nome no topo:** BRAZA FORTE (sem artigo "O")
-- **Hashtag oficial:** #VEMPROBRAZA (presente no rodapé como elemento gráfico)
+## Identidade & Narrativa Visual
+- **Conceito:** "Da montagem à primeira mordida" — narrativa visual contínua com grafismos de grelha, gergelim e texturas de hamburgueria integrados ao fundo e seções.
+- **Carrossel:** Transições com profundidade (scale + translateZ), indicadores de progresso e suporte a gesto de arrastar/toque.
+- **Microinterações:** Efeito de brilho deslizante nos botões, hover com elevação nos cards da galeria e revelação em sequência (`reveal-seq`) de títulos e conteúdos durante a rolagem.
+- **Hashtag oficial:** #VEMPROBRAZA (presente no rodapé como assinatura gráfica em grande escala).
+- **Nome no topo:** BRAZA FORTE (sem artigo "O").
 - **Chamada principal:** "Hambúrguer artesanal em Sapezal. Seu próximo favorito começa aqui."
-- **Textos removidos:** "100% na brasa", "01 / Conceito", "brasa de verdade", "O BRAZA FORTE"
+- **Textos removidos:** "100% na brasa", "01 / Conceito", "brasa de verdade", "O BRAZA FORTE".
 
 ## Acessibilidade & Performance
 

@@ -92,7 +92,27 @@
     }
     .label::before { content: ""; width: 40px; height: 2px; background: var(--gradient-ember); }
 
-    /* Botões com Gradiente de Brasa */
+    /* Grafismos da Marca: Grelha e Texturas */
+    .grill-pattern {
+      position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.04;
+      background-image: repeating-linear-gradient(90deg, var(--paper) 0 2px, transparent 2px 40px);
+      mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+    }
+    .sesame-deco {
+      position: absolute; width: 6px; height: 10px; background: var(--gold); border-radius: 50%; opacity: 0.15; pointer-events: none; z-index: 1;
+    }
+
+    /* Microinterações e Revelação em Sequência */
+    .reveal-seq > * { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+    .reveal-seq.visible > *:nth-child(1) { opacity: 1; transform: none; transition-delay: 0s; }
+    .reveal-seq.visible > *:nth-child(2) { opacity: 1; transform: none; transition-delay: 0.1s; }
+    .reveal-seq.visible > *:nth-child(3) { opacity: 1; transform: none; transition-delay: 0.2s; }
+    .reveal-seq.visible > *:nth-child(4) { opacity: 1; transform: none; transition-delay: 0.3s; }
+
+    .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 30px -8px rgba(0,0,0,0.5); }
+
+    /* Botões com Gradiente de Brasa e Microinteração */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -108,13 +128,19 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       border: none;
-      transition: all 0.2s ease;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+      position: relative; overflow: hidden;
     }
+    .btn::after {
+      content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transform: translateX(-100%); transition: transform 0.5s ease;
+    }
+    .btn:hover::after { transform: translateX(100%); }
     .btn:hover, .btn:focus-visible {
       filter: brightness(1.15);
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px -5px var(--ember-glow);
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 12px 28px -5px var(--ember-glow);
       color: var(--black);
     }
     .btn-outline {
@@ -145,7 +171,7 @@
     .brand-name small { display: block; font-family: var(--font-body); font-size: 0.6rem; color: var(--gold); letter-spacing: 0.15em; margin-top: 4px; font-weight: 500; }
     .header-cta { min-height: 44px; padding: 0 18px; font-size: 0.9rem; }
 
-    /* HERO COM CARROSSEL */
+    /* HERO COM CARROSSEL E PROFUNDIDADE */
     .hero-stage {
       position: relative;
       min-height: 100svh;
@@ -155,15 +181,27 @@
       overflow: hidden;
       padding-bottom: calc(100px + var(--safe-b));
     }
+    .hero-grill-bg {
+      position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0.06;
+      background-image: repeating-linear-gradient(90deg, var(--paper) 0 2px, transparent 2px 48px),
+                        repeating-linear-gradient(0deg, var(--paper) 0 2px, transparent 2px 48px);
+      mask-image: radial-gradient(ellipse at 50% 60%, black 20%, transparent 70%);
+    }
     .hero-carousel {
-      position: absolute; inset: 0; z-index: 0;
+      position: absolute; inset: 0; z-index: 1;
+      perspective: 1200px;
     }
     .hero-slide {
       position: absolute; inset: 0;
       opacity: 0;
-      transition: opacity 0.8s ease;
+      transform: scale(1.1) translateZ(-60px);
+      transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
     }
-    .hero-slide.active { opacity: 1; }
+    .hero-slide.active {
+      opacity: 1;
+      transform: scale(1) translateZ(0);
+    }
     .hero-slide img {
       width: 100%; height: 100%; object-fit: cover;
       filter: brightness(0.55) contrast(1.1);
@@ -494,6 +532,7 @@
   <main>
     <!-- HERO COM CARROSSEL -->
     <section id="inicio" class="hero-stage">
+      <div class="hero-grill-bg" aria-hidden="true"></div>
       <div class="hero-carousel" id="heroCarousel" aria-label="Fotos dos lanches BRAZA FORTE">
         <div class="hero-slide active"><img src="fotos/01B61CEB-E24C-4087-B231-B59C25F0C1FE_4_5005_c.jpeg" alt="Hambúrguer BRAZA FORTE com queijo derretendo" fetchpriority="high"></div>
         <div class="hero-slide"><img src="fotos/12C10759-A919-4E12-9C0C-C3B7A1D33E83_4_5005_c.jpeg" alt="Combo BRAZA FORTE com batata e bebida" loading="lazy"></div>
@@ -555,8 +594,8 @@
 
     <!-- HISTÓRIA / CONCEITO -->
     <section id="historia" class="story">
-      <div class="shell story-grid">
-        <div class="story-text reveal">
+      <div class="shell story-grid reveal-seq">
+        <div class="story-text">
           <h2>O SABOR QUE<br><em>CONQUISTA.</em></h2>
           <p>BRAZA FORTE é referência em hambúrguer artesanal em Sapezal. Ingredientes selecionados, preparo cuidadoso e sabor marcante em cada detalhe.</p>
           <p>Mais do que um lanche, é um momento de prazer genuíno. Venha conhecer ou peça sem sair de casa.</p>
@@ -586,11 +625,11 @@
     </section>
 
     <!-- GALERIA EDITORIAL -->
-    <section class="gallery reveal">
-      <div class="shell">
+    <section class="gallery">
+      <div class="shell reveal-seq">
         <div class="label">03 / Na Brasa</div>
         <h2 style="margin-bottom: 32px;">SABOR QUE<br><em>APARECE.</em></h2>
-        <div class="gallery-grid">
+        <div class="gallery-grid card-hover">
           <div class="gallery-item wide">
             <img src="fotos/IMG_0361.jpeg" alt="Hambúrguer BRAZA FORTE com queijo derretendo e bacon crocante" loading="lazy">
             <div class="gallery-caption">O clássico da casa</div>
@@ -724,9 +763,9 @@
       const obs = new IntersectionObserver((entries) => {
         entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }});
       }, { threshold: 0.1 });
-      document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+      document.querySelectorAll('.reveal, .reveal-seq').forEach(el => obs.observe(el));
     } else {
-      document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+      document.querySelectorAll('.reveal, .reveal-seq').forEach(el => el.classList.add('visible'));
     }
 
     // Carrossel do Hero
@@ -742,6 +781,8 @@
         slides[current].classList.remove('active');
         dots[current].classList.remove('active');
         current = (index + slides.length) % slides.length;
+        // Força reflow para reiniciar animação CSS de profundidade
+        void slides[current].offsetWidth;
         slides[current].classList.add('active');
         dots[current].classList.add('active');
       };
