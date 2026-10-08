@@ -439,10 +439,7 @@
     .ranking-strip {
       background: var(--charcoal); border-bottom: 1px solid var(--steel);
       padding: 16px 0; position: relative; z-index: 90;
-      margin-top: 30px;
-    }
-    @media (max-width: 767px) {
-      .ranking-strip { margin-top: 20px; }
+      margin-top: 0;
     }
     .ranking-inner {
       display: flex; align-items: center; gap: 16px; overflow-x: auto;
@@ -450,9 +447,14 @@
     }
     .ranking-inner::-webkit-scrollbar { display: none; }
     .ranking-crown {
-      flex: none; width: 48px; height: 48px; background: var(--gradient-ember);
-      border-radius: 50%; display: grid; place-items: center; font-size: 1.4rem;
-      box-shadow: 0 4px 12px rgba(233,123,52,0.3);
+      flex: none; font-size: 1.6rem; line-height: 1;
+      filter: drop-shadow(0 0 6px rgba(255,210,122,0.5));
+    }
+    .ranking-pos-2 { color: #C0C0C0; font-weight: 700; }
+    .ranking-pos-3 { color: #CD7F32; font-weight: 700; }
+    .ranking-msg {
+      font-size: .65rem; color: var(--paper-deep); opacity: .7;
+      margin-left: auto; white-space: nowrap; font-style: italic;
     }
     .ranking-info { flex: 1; min-width: 0; }
     .ranking-title {
@@ -598,13 +600,6 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
 </head>
 <body>
 
-  <!-- RANKING BRAZA STRIP -->
-  <div class="ranking-strip" id="rankingStrip">
-    <div class="shell ranking-inner">
-      <div class="ranking-empty">Carregando ranking...</div>
-    </div>
-  </div>
-
   <header class="header">
     <div class="shell header-inner">
       <a href="#inicio" class="brand" aria-label="BRAZA FORTE - Início">
@@ -618,6 +613,13 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
       <a href="#pedir" class="btn header-cta" data-link="order">Pedir Agora</a>
     </div>
   </header>
+
+  <!-- RANKING BRAZA STRIP -->
+  <div class="ranking-strip" id="rankingStrip">
+    <div class="shell ranking-inner">
+      <div class="ranking-empty">Carregando ranking...</div>
+    </div>
+  </div>
 
   <main>
     <!-- HERO COM CARROSSEL -->
@@ -969,19 +971,13 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
             .slice(0, 5);
           const winner = entries.find(e => e.position === 1) || entries[0];
 
-          let html = `
-            <div class="ranking-crown" aria-hidden="true">👑</div>
-            <div class="ranking-info">
-              <div class="ranking-title">Rei do BRAZA no mês · ${data.period_label || ''}</div>
-              <div class="ranking-winner">${winner.customer_name}</div>
-              <div class="ranking-meta">${winner.order_count} pedidos</div>
-            </div>
-            <div class="ranking-others" style="display:flex;gap:12px;margin-left:auto;font-size:.7rem;color:var(--paper-deep);align-items:center;">`;
+          let html = `<div class="ranking-crown" aria-hidden="true">👑</div><div class="ranking-info"><div class="ranking-title">Rei do BRAZA no mês · ${data.period_label || ''}</div><div class="ranking-winner">${winner.customer_name}</div><div class="ranking-meta">${winner.order_count} pedidos</div></div><div class="ranking-others" style="display:flex;gap:12px;margin-left:auto;font-size:.7rem;color:var(--paper-deep);align-items:center;">`;
 
           entries.slice(1).forEach(e => {
-            html += `<span style="white-space:nowrap"><strong style="color:var(--gold)">${e.position}º</strong> ${e.customer_name}</span>`;
+            const posClass = e.position === 2 ? 'ranking-pos-2' : e.position === 3 ? 'ranking-pos-3' : '';
+            html += `<span style="white-space:nowrap" class="${posClass}"><strong>${e.position}º</strong> ${e.customer_name}</span>`;
           });
-          html += '</div>';
+          html += '<span class="ranking-msg">No próximo mês tem mais 🔥</span></div>';
           strip.innerHTML = html;
         })
         .catch(() => {
