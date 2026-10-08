@@ -222,7 +222,7 @@
       margin-bottom: 12px;
       text-shadow: 0 4px 30px rgba(233,123,52,0.2);
     }
-    .hero-title span { display: block; color: var(--ember); transform: translateX(-3%); }
+    .hero-title span { display: block; color: var(--ember); text-align: center; margin-inline: auto; width: fit-content; transform: none; }
     .hero-sub { font-size: 1rem; color: var(--paper-deep); max-width: 360px; margin: 0 auto 24px; line-height: 1.5; }
     .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
@@ -439,10 +439,10 @@
     .ranking-strip {
       background: var(--charcoal); border-bottom: 1px solid var(--steel);
       padding: 16px 0; position: relative; z-index: 90;
-      margin-top: 76px;
+      margin-top: 30px;
     }
     @media (max-width: 767px) {
-      .ranking-strip { margin-top: 48px; }
+      .ranking-strip { margin-top: 20px; }
     }
     .ranking-inner {
       display: flex; align-items: center; gap: 16px; overflow-x: auto;
@@ -624,10 +624,11 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
     <section id="inicio" class="hero-stage">
       <div class="hero-grill-bg" aria-hidden="true"></div>
       <div class="hero-carousel" id="heroCarousel" aria-label="Fotos dos lanches BRAZA FORTE">
-        <div class="hero-slide active"><img src="fotos/01B61CEB-E24C-4087-B231-B59C25F0C1FE_4_5005_c.jpeg" alt="Hambúrguer BRAZA FORTE com queijo derretendo" fetchpriority="high"></div>
-        <div class="hero-slide"><img src="fotos/12C10759-A919-4E12-9C0C-C3B7A1D33E83_4_5005_c.jpeg" alt="Combo BRAZA FORTE com batata e bebida" loading="lazy"></div>
-        <div class="hero-slide"><img src="fotos/1F8544D8-E420-4DAA-8EC4-3293616FBA18_4_5005_c.jpeg" alt="Detalhe da carne suculenta na brasa" loading="lazy"></div>
-        <div class="hero-slide"><img src="fotos/22CB21E3-A476-4AE7-9CDB-DD0CBF200597_4_5005_c.jpeg" alt="Pão artesanal selado com ingredientes frescos" loading="lazy"></div>
+        <div class="hero-slide active"><img data-slot="hero_1" src="fotos/01B61CEB-E24C-4087-B231-B59C25F0C1FE_4_5005_c.jpeg" alt="Hambúrguer BRAZA FORTE com queijo derretendo" fetchpriority="high"></div>
+        <div class="hero-slide"><img data-slot="hero_2" src="fotos/12C10759-A919-4E12-9C0C-C3B7A1D33E83_4_5005_c.jpeg" alt="Combo BRAZA FORTE com batata e bebida" loading="lazy"></div>
+        <div class="hero-slide"><img data-slot="hero_3" src="fotos/1F8544D8-E420-4DAA-8EC4-3293616FBA18_4_5005_c.jpeg" alt="Detalhe da carne suculenta na brasa" loading="lazy"></div>
+        <div class="hero-slide"><img data-slot="hero_4" src="fotos/22CB21E3-A476-4AE7-9CDB-DD0CBF200597_4_5005_c.jpeg" alt="Pão artesanal selado com ingredientes frescos" loading="lazy"></div>
+        <div class="hero-slide"><img data-slot="hero_5" src="fotos/01B61CEB-E24C-4087-B231-B59C25F0C1FE_4_5005_c.jpeg" alt="BRAZA FORTE destaque da casa" loading="lazy"></div>
         <div class="hero-overlay"></div>
       </div>
       <div class="shell hero-content">
@@ -945,7 +946,7 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
       }).then(() => {}).catch(() => {}); // Falha silenciosa não afeta experiência
     }
 
-    // Carregar Ranking Braza Ativo na faixa superior
+    // Carregar Ranking Braza Ativo (TOP 5) na faixa superior
     function loadRankingStrip() {
       if (!window.supabase) return;
       const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -962,14 +963,26 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
             strip.innerHTML = '<div class="ranking-empty">Ranking em breve. Quem será o Rei do BRAZA?</div>';
             return;
           }
-          const winner = data.ranking_entries.find(e => e.position === 1) || data.ranking_entries[0];
-          strip.innerHTML = `
+          // Ordenar entradas por posição e pegar TOP 5
+          const entries = data.ranking_entries
+            .sort((a, b) => a.position - b.position)
+            .slice(0, 5);
+          const winner = entries.find(e => e.position === 1) || entries[0];
+
+          let html = `
             <div class="ranking-crown" aria-hidden="true">👑</div>
             <div class="ranking-info">
-              <div class="ranking-title">Rei do BRAZA no mês</div>
+              <div class="ranking-title">Rei do BRAZA no mês · ${data.period_label || ''}</div>
               <div class="ranking-winner">${winner.customer_name}</div>
-              <div class="ranking-meta">${winner.order_count} pedidos · ${data.period_label || ''}</div>
-            </div>`;
+              <div class="ranking-meta">${winner.order_count} pedidos</div>
+            </div>
+            <div class="ranking-others" style="display:flex;gap:12px;margin-left:auto;font-size:.7rem;color:var(--paper-deep);align-items:center;">`;
+
+          entries.slice(1).forEach(e => {
+            html += `<span style="white-space:nowrap"><strong style="color:var(--gold)">${e.position}º</strong> ${e.customer_name}</span>`;
+          });
+          html += '</div>';
+          strip.innerHTML = html;
         })
         .catch(() => {
           const strip = document.querySelector('.ranking-inner');
@@ -977,9 +990,41 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
         });
     }
 
+    // Carregar Fotos do Carrossel Dinamicamente
+    function loadCarouselPhotos() {
+      if (!window.supabase) return;
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      sb.from('photos')
+        .select('slot_id, storage_path')
+        .in('slot_id', ['hero_1','hero_2','hero_3','hero_4','hero_5'])
+        .eq('active', true)
+        .then(({ data, error }) => {
+          if (error || !data || data.length === 0) return;
+          const carousel = document.querySelector('.carousel-track, .hero-carousel, [data-carousel]');
+          if (!carousel) return;
+          // Mapear slots para URLs públicas
+          const slotMap = {};
+          data.forEach(p => {
+            const url = sb.storage.from('site-images').getPublicUrl(p.storage_path).data.publicUrl;
+            slotMap[p.slot_id] = url;
+          });
+          // Atualizar imagens existentes ou substituir conteúdo se houver mapeamento
+          const slides = carousel.querySelectorAll('img[data-slot], [data-slot] img');
+          slides.forEach(img => {
+            const slot = img.dataset.slot || img.parentElement?.dataset.slot;
+            if (slot && slotMap[slot]) {
+              img.src = slotMap[slot];
+              img.removeAttribute('srcset'); // Forçar nova imagem
+            }
+          });
+        })
+        .catch(() => {}); // Falha silenciosa mantém imagens estáticas
+    }
+
     function initDynamicContent() {
       if (!window.supabase) return;
       loadRankingStrip();
+      loadCarouselPhotos();
       const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // Exemplo: Carregar promoções ativas (tabela 'promotions' deve ser criada no Supabase)
