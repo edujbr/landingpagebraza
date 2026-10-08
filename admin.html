@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRAZA FORTE — Painel Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#171613;--surface:#211F1B;--border:#34312C;--text:#FFFAF1;--muted:#E4DCCD;--ember:#E97B34;--gold:#FFD27A}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+.shell{max-width:900px;margin:0 auto;padding:20px;width:100%}
+h1,h2,h3{font-family:'Adumu','Anton',sans-serif;text-transform:uppercase;letter-spacing:.02em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;background:var(--ember);color:#000;font-weight:700;border:none;cursor:pointer;font-size:.9rem;text-transform:uppercase;letter-spacing:.05em;transition:filter .2s}
+.btn:hover{filter:brightness(1.15)}
+.btn-outline{background:transparent;border:1px solid var(--muted);color:var(--muted)}
+.btn-outline:hover{background:var(--muted);color:var(--bg)}
+.btn-danger{background:#B84029;color:#fff}
+input,select,textarea{width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:.9rem;margin-bottom:12px}
+input:focus,textarea:focus{outline:none;border-color:var(--ember)}
+label{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:4px}
+.card{background:var(--surface);border:1px solid var(--border);padding:20px;margin-bottom:16px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr}}
+.stat-number{font-family:'Adumu',sans-serif;font-size:2.5rem;color:var(--ember);line-height:1}
+.stat-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{text-align:left;padding:8px;border-bottom:1px solid var(--border);color:var(--gold);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em}
+td{padding:8px;border-bottom:1px solid rgba(52,49,44,.5);vertical-align:middle}
+.img-thumb{width:48px;height:48px;object-fit:cover;border:1px solid var(--border)}
+.status-active{color:#4ade80}.status-inactive{color:#888}
+#loginView,#dashboardView{display:none}
+.tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)}
+.tab{padding:12px 20px;cursor:pointer;font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s}
+.tab.active{color:var(--ember);border-bottom-color:var(--ember)}
+.tab-content{display:none}.tab-content.active{display:block}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--ember);color:#000;padding:12px 20px;font-weight:700;font-size:.85rem;z-index:999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div id="loginView" class="shell" style="margin:auto;max-width:400px">
+<h1 style="font-size:2rem;margin-bottom:8px;color:var(--ember)">BRAZA FORTE</h1>
+<p style="color:var(--muted);margin-bottom:24px;font-size:.9rem">Painel Administrativo</p>
+<div class="card">
+<label>E-mail</label>
+<input type="email" id="loginEmail" placeholder="admin@brazaforte.com">
+<label>Senha</label>
+<input type="password" id="loginPass" placeholder="••••••••">
+<button class="btn" style="width:100%;margin-top:8px" onclick="doLogin()">Entrar</button>
+<p id="loginError" style="color:#B84029;font-size:.8rem;margin-top:12px;display:none"></p>
+</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboardView">
+<div class="shell" style="display:flex;align-items:center;justify-content:space-between;padding-top:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+<h2 style="font-size:1.2rem">Painel Admin</h2>
+<button class="btn btn-outline" style="padding:6px 14px;font-size:.75rem" onclick="doLogout()">Sair</button>
+</div>
+<div class="shell">
+<!-- Métricas -->
+<div class="grid-2" style="margin:20px 0">
+<div class="card"><div class="stat-number" id="metricTotal">—</div><div class="stat-label">Visitas Totais</div></div>
+<div class="card"><div class="stat-number" id="metricToday">—</div><div class="stat-label">Visitas Hoje</div></div>
+</div>
+<!-- Tabs -->
+<div class="tabs">
+<div class="tab active" data-tab="photos">Fotos</div>
+<div class="tab" data-tab="promos">Promoções</div>
+</div>
+<!-- TAB FOTOS -->
+<div id="tab-photos" class="tab-content active">
+<div class="card">
+<h3 style="font-size:1rem;margin-bottom:12px">Nova Foto</h3>
+<div class="grid-2">
+<div><label>Imagem</label><input type="file" id="photoFile" accept="image/*"></div>
+<div><label>Texto Alternativo</label><input type="text" id="photoAlt" placeholder="Descrição da foto"></div>
+</div>
+<label>Ordem</label><input type="number" id="photoOrder" value="0" min="0">
+<button class="btn" onclick="uploadPhoto()">Enviar Foto</button>
+</div>
+<table id="photosTable"><thead><tr><th>Img</th><th>Alt</th><th>Ordem</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table>
+</div>
+<!-- TAB PROMOÇÕES -->
+<div id="tab-promos" class="tab-content">
+<div class="card">
+<h3 style="font-size:1rem;margin-bottom:12px" id="promoFormTitle">Nova Promoção</h3>
+<input type="hidden" id="promoId">
+<label>Título</label><input type="text" id="promoTitle">
+<label>Descrição</label><textarea id="promoDesc" rows="2"></textarea>
+<div class="grid-2">
+<div><label>Texto do Botão</label><input type="text" id="promoBtnText" placeholder="Saiba Mais"></div>
+<div><label>URL do Botão</label><input type="url" id="promoBtnUrl" placeholder="https://..."></div>
+</div>
+<div class="grid-2">
+<div><label>Início</label><input type="date" id="promoStart"></div>
+<div><label>Fim</label><input type="date" id="promoEnd"></div>
+</div>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button class="btn" onclick="savePromo()">Salvar</button>
+<button class="btn btn-outline" onclick="clearPromoForm()">Limpar</button>
+</div>
+</div>
+<table id="promosTable"><thead><tr><th>Título</th><th>Período</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table>
+</div>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL='https://jubndqjzpthckxpabtog.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Ym5kcWp6cHRoY2t4cGFidG9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0MjE5ODEsImV4cCI6MjEwNjk5Nzk4MX0.bgV31GymC0op8yyLwWVJhWDL5kCT69pabnGfOlOhMl0';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+// Auth state
+sb.auth.getSession().then(({data:{session}})=>{
+  if(session)showDashboard();else showLogin();
+});
+sb.auth.onAuthStateChange((_e,session)=>{
+  if(session)showDashboard();else showLogin();
+});
+
+function showLogin(){document.getElementById('loginView').style.display='block';document.getElementById('dashboardView').style.display='none'}
+function showDashboard(){document.getElementById('loginView').style.display='none';document.getElementById('dashboardView').style.display='block';loadMetrics();loadPhotos();loadPromos()}
+
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  const errEl=document.getElementById('loginError');
+  errEl.style.display='none';
+  const{error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){errEl.textContent=error.message;errEl.style.display='block'}
+}
+async function doLogout(){await sb.auth.signOut()}
+
+// Toast
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+  });
+});
+
+// Metrics
+async function loadMetrics(){
+  const{data,error}=await sb.from('page_views').select('id,viewed_at');
+  if(error){document.getElementById('metricTotal').textContent='0';document.getElementById('metricToday').textContent='0';return}
+  const total=data.length;
+  const today=new Date().toISOString().slice(0,10);
+  const todayCount=data.filter(r=>r.viewed_at&&r.viewed_at.slice(0,10)===today).length;
+  document.getElementById('metricTotal').textContent=total;
+  document.getElementById('metricToday').textContent=todayCount;
+}
+
+// Photos
+async function loadPhotos(){
+  const{data,error}=await sb.from('photos').select('*').order('sort_order',{ascending:true});
+  const tbody=document.querySelector('#photosTable tbody');
+  tbody.innerHTML='';
+  if(error||!data)return;
+  data.forEach(p=>{
+    const tr=document.createElement('tr');
+    const imgUrl=p.storage_path?sb.storage.from('site-images').getPublicUrl(p.storage_path).data.publicUrl:'';
+    tr.innerHTML=`
+      <td>${imgUrl?`<img src="${imgUrl}" class="img-thumb" alt="">`:''}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${p.alt_text||'—'}</td>
+      <td>${p.sort_order??0}</td>
+      <td class="${p.active?'status-active':'status-inactive'}">${p.active?'Ativa':'Inativa'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline" style="padding:4px 10px;font-size:.7rem;margin-right:4px" onclick="togglePhoto(${p.id},${!p.active})">${p.active?'Desativar':'Ativar'}</button>
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:.7rem" onclick="deletePhoto(${p.id},'${p.storage_path}')">Excluir</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function uploadPhoto(){
+  const fileInput=document.getElementById('photoFile');
+  const alt=document.getElementById('photoAlt').value.trim();
+  const order=parseInt(document.getElementById('photoOrder').value)||0;
+  if(!fileInput.files.length){showToast('Selecione uma imagem');return}
+  const file=fileInput.files[0];
+  const ext=file.name.split('.').pop();
+  const path=`photos/${Date.now()}.${ext}`;
+  const{error:upErr}=await sb.storage.from('site-images').upload(path,file,{cacheControl:'3600',upsert:false});
+  if(upErr){showToast('Erro ao enviar: '+upErr.message);return}
+  const{error:dbErr}=await sb.from('photos').insert({storage_path:path,alt_text:alt,sort_order:order,active:true});
+  if(dbErr){showToast('Erro ao salvar: '+dbErr.message);return}
+  showToast('Foto enviada com sucesso!');
+  fileInput.value='';document.getElementById('photoAlt').value='';document.getElementById('photoOrder').value='0';
+  loadPhotos();
+}
+
+async function togglePhoto(id,active){
+  await sb.from('photos').update({active}).eq('id',id);
+  loadPhotos();
+}
+
+async function deletePhoto(id,path){
+  if(!confirm('Confirma exclusão desta foto?'))return;
+  if(path)await sb.storage.from('site-images').remove([path]);
+  await sb.from('photos').delete().eq('id',id);
+  showToast('Foto excluída');loadPhotos();
+}
+
+// Promos
+async function loadPromos(){
+  const{data,error}=await sb.from('promotions').select('*').order('created_at',{ascending:false});
+  const tbody=document.querySelector('#promosTable tbody');
+  tbody.innerHTML='';
+  if(error||!data)return;
+  data.forEach(p=>{
+    const now=new Date().toISOString().slice(0,10);
+    const isActive=p.active&&(p.start_date<=now)&&(!p.end_date||p.end_date>=now);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${p.title||'—'}</td>
+      <td style="font-size:.75rem;color:var(--muted)">${p.start_date||'?'} → ${p.end_date||'∞'}</td>
+      <td class="${isActive?'status-active':'status-inactive'}">${isActive?'Ativa':'Inativa'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline" style="padding:4px 10px;font-size:.7rem;margin-right:4px" onclick="editPromo(${p.id})">Editar</button>
+        <button class="btn btn-outline" style="padding:4px 10px;font-size:.7rem;margin-right:4px" onclick="togglePromo(${p.id},${!p.active})">${p.active?'Desativar':'Ativar'}</button>
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:.7rem" onclick="deletePromo(${p.id})">Excluir</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function savePromo(){
+  const id=document.getElementById('promoId').value;
+  const record={
+    title:document.getElementById('promoTitle').value.trim(),
+    description:document.getElementById('promoDesc').value.trim(),
+    button_text:document.getElementById('promoBtnText').value.trim(),
+    button_url:document.getElementById('promoBtnUrl').value.trim(),
+    start_date:document.getElementById('promoStart').value||null,
+    end_date:document.getElementById('promoEnd').value||null,
+    active:true
+  };
+  let error;
+  if(id){({error}=await sb.from('promotions').update(record).eq('id',id))}
+  else{({error}=await sb.from('promotions').insert(record))}
+  if(error){showToast('Erro: '+error.message);return}
+  showToast(id?'Promoção atualizada!':'Promoção criada!');
+  clearPromoForm();loadPromos();
+}
+
+async function editPromo(id){
+  const{data,error}=await sb.from('promotions').select('*').eq('id',id).single();
+  if(error||!data)return;
+  document.getElementById('promoId').value=data.id;
+  document.getElementById('promoTitle').value=data.title||'';
+  document.getElementById('promoDesc').value=data.description||'';
+  document.getElementById('promoBtnText').value=data.button_text||'';
+  document.getElementById('promoBtnUrl').value=data.button_url||'';
+  document.getElementById('promoStart').value=data.start_date||'';
+  document.getElementById('promoEnd').value=data.end_date||'';
+  document.getElementById('promoFormTitle').textContent='Editar Promoção';
+  document.querySelector('[data-tab="promos"]').click();
+}
+
+async function togglePromo(id,active){
+  await sb.from('promotions').update({active}).eq('id',id);loadPromos();
+}
+
+async function deletePromo(id){
+  if(!confirm('Confirma exclusão desta promoção?'))return;
+  await sb.from('promotions').delete().eq('id',id);showToast('Promoção excluída');loadPromos();
+}
+
+function clearPromoForm(){
+  document.getElementById('promoId').value='';
+  document.getElementById('promoTitle').value='';
+  document.getElementById('promoDesc').value='';
+  document.getElementById('promoBtnText').value='';
+  document.getElementById('promoBtnUrl').value='';
+  document.getElementById('promoStart').value='';
+  document.getElementById('promoEnd').value='';
+  document.getElementById('promoFormTitle').textContent='Nova Promoção';
+}
+</script>

@@ -717,6 +717,16 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
         <a href="#" data-link="whatsapp">WhatsApp</a>
         <a href="#" data-link="maps">Mapa</a>
       </nav>
+      <!-- SOM DA CASA: Playlist Spotify -->
+      <div class="spotify-section" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--steel); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="#1DB954" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        <div>
+          <div style="font-family: var(--font-display); font-size: 0.9rem; color: var(--paper); text-transform: uppercase; letter-spacing: 0.05em; line-height: 1;">Som da Casa</div>
+          <a href="https://open.spotify.com/playlist/4nuwmC5L2wR4E8OmXmxFtt?si=e89e8aa1b2324194" target="_blank" rel="noopener noreferrer" style="font-family: var(--font-body); font-size: 0.75rem; color: var(--ember); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            Ouvir playlist no Spotify ↗
+          </a>
+        </div>
+      </div>
     </div>
   </footer>
 
@@ -826,6 +836,62 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
       }, { passive: true });
 
       startAuto();
+    }
+
+    // --- INTEGRAÇÃO SUPABASE (Conteúdo Dinâmico) ---
+    const SUPABASE_URL = 'https://jubndqjzpthckxpabtog.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Ym5kcWp6cHRoY2t4cGFidG9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0MjE5ODEsImV4cCI6MjEwNjk5Nzk4MX0.bgV31GymC0op8yyLwWVJhWDL5kCT69pabnGfOlOhMl0';
+
+    // Carrega SDK do Supabase dinamicamente se ainda não existir
+    if (!window.supabase) {
+      const sbScript = document.createElement('script');
+      sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+      sbScript.onload = () => { initDynamicContent(); trackPageView(); };
+      document.head.appendChild(sbScript);
+    } else {
+      initDynamicContent();
+      trackPageView();
+    }
+
+    function trackPageView() {
+      if (!window.supabase) return;
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      sb.from('page_views').insert({
+        path: window.location.pathname,
+        referrer: document.referrer || null,
+        user_agent: navigator.userAgent || null,
+        viewed_at: new Date().toISOString()
+      }).then(() => {}).catch(() => {}); // Falha silenciosa não afeta experiência
+    }
+
+    function initDynamicContent() {
+      if (!window.supabase) return;
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // Exemplo: Carregar promoções ativas (tabela 'promotions' deve ser criada no Supabase)
+      sb.from('promotions')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .then(({ data, error }) => {
+          if (error || !data || data.length === 0) return; // Fallback silencioso para conteúdo estático
+          const promo = data[0];
+          // Injeta banner promocional acima do footer se houver dados
+          const footer = document.querySelector('.footer');
+          if (footer && promo.title) {
+            const banner = document.createElement('div');
+            banner.className = 'promo-dynamic shell';
+            banner.style.cssText = 'padding: 40px 20px; text-align: center; border-bottom: 1px solid var(--steel);';
+            banner.innerHTML = `
+              <h3 style="font-family:var(--font-display); color:var(--ember); font-size:clamp(1.5rem,4vw,2.5rem); margin-bottom:8px; text-transform:uppercase;">${promo.title}</h3>
+              <p style="color:var(--paper-deep); margin-bottom:16px; max-width:500px; margin-inline:auto;">${promo.description || ''}</p>
+              ${promo.button_url ? `<a href="${promo.button_url}" class="btn" target="_blank" rel="noopener">${promo.button_text || 'Saiba Mais'}</a>` : ''}
+            `;
+            footer.parentNode.insertBefore(banner, footer);
+          }
+        })
+        .catch(() => {}); // Falha silenciosa mantém site estático funcionando
     }
   </script>
 </body>

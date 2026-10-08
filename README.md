@@ -73,8 +73,87 @@ const STORE = {
 - Imagens com atributos `alt` descritivos e `fetchpriority` no hero.
 - Zero dependências externas além das fontes do Google.
 
+## Painel Administrativo (`/admin.html`)
+
+O painel permite gerenciar fotos e promoções dinamicamente via Supabase, com autenticação segura e métricas de acesso.
+
+### Configuração no Supabase
+
+1.  Crie um projeto gratuito em [supabase.com](https://supabase.com).
+2.  No **SQL Editor**, execute os comandos abaixo para criar as tabelas:
+
+```sql
+-- Tabela de fotos
+create table photos (
+  id bigint generated always as identity primary key,
+  storage_path text not null,
+  alt_text text,
+  sort_order int default 0,
+  active boolean default true,
+  created_at timestamptz default now()
+);
+
+-- Tabela de promoções
+create table promotions (
+  id bigint generated always as identity primary key,
+  title text not null,
+  description text,
+  button_text text,
+  button_url text,
+  start_date date,
+  end_date date,
+  active boolean default true,
+  created_at timestamptz default now()
+);
+
+-- Tabela de métricas (page views)
+create table page_views (
+  id bigint generated always as identity primary key,
+  path text,
+  referrer text,
+  user_agent text,
+  viewed_at timestamptz default now()
+);
+
+-- Storage bucket para imagens
+insert into storage.buckets (id, name, public) values ('site-images', 'site-images', true);
+
+-- RLS Policies (segurança)
+alter table photos enable row level security;
+alter table promotions enable row level security;
+alter table page_views enable row level security;
+
+-- Leitura pública, escrita apenas para autenticados
+create policy "Public read photos" on photos for select using (true);
+create policy "Auth write photos" on photos for all using (auth.role() = 'authenticated');
+create policy "Public read promos" on promotions for select using (true);
+create policy "Auth write promos" on promotions for all using (auth.role() = 'authenticated');
+create policy "Public insert views" on page_views for insert with check (true);
+create policy "Auth read views" on page_views for select using (auth.role() = 'authenticated');
+create policy "Public read images" on storage.objects for select using (bucket_id = 'site-images');
+create policy "Auth upload images" on storage.objects for insert with check (bucket_id = 'site-images' and auth.role() = 'authenticated');
+create policy "Auth delete images" on storage.objects for delete using (bucket_id = 'site-images' and auth.role() = 'authenticated');
+```
+
+3.  Em **Authentication > Users**, crie o usuário administrador (e-mail + senha).
+4.  Copie a **Project URL** e a **anon key** em **Settings > API** e substitua os valores no `index.html` e `admin.html`.
+
+### Funcionalidades
+
+-   **Fotos:** Upload, ordenação, texto alternativo, ativar/desativar e exclusão com confirmação.
+-   **Promoções:** CRUD completo com datas de vigência e botão configurável.
+-   **Métricas:** Contagem total e diária de visitas (sem coleta de dados pessoais).
+-   **Fallback:** Se o Supabase estiver indisponível, o site exibe o conteúdo estático normalmente.
+
+## Seção "Som da Casa" (Spotify)
+
+-   Link oficial: `https://open.spotify.com/playlist/4nuwmC5L2wR4E8OmXmxFtt?si=e89e8aa1b2324194`
+-   Exibida no footer com ícone do Spotify e link direto para o app/web player.
+-   Sem autoplay; abre na plataforma escolhida pelo usuário.
+
 ## Próximos Passos (Dados Pendentes)
 
-- [ ] Preencher `googleReviewUrl` com o link direto oficial de avaliação no Google.
-- [ ] Substituir placeholder do mapa por embed real ou imagem estática personalizada (opcional).
-- [ ] Adicionar fotos adicionais de pratos ou ambiente nas seções futuras.
+-   [x] Link de avaliação do Google preenchido (`googleReviewUrl`).
+-   [x] Link de pedidos preenchido (`orderUrl`).
+-   [ ] Substituir placeholder do mapa por embed real ou imagem estática personalizada (opcional).
+-   [ ] Adicionar fotos adicionais de pratos ou ambiente nas seções futuras.
