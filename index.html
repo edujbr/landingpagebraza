@@ -188,26 +188,26 @@
     }
     .hero-carousel {
       position: absolute; inset: 0; z-index: 1;
-      transform: translateZ(0); /* Force GPU layer to prevent scroll disappearance */
+      /* Fix: Remove transforms on container to prevent scroll disappearance in mobile WebKit */
     }
     .hero-slide {
       position: absolute; inset: 0;
       opacity: 0;
-      transform: scale(1.05);
-      transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.8s ease-in-out;
       z-index: 0;
       pointer-events: none;
+      background-color: var(--black); /* Fallback color prevents white flash */
     }
     .hero-slide.active {
       opacity: 1;
-      transform: scale(1);
       z-index: 2;
       pointer-events: auto;
     }
     .hero-slide img {
       width: 100%; height: 100%; object-fit: cover;
       filter: brightness(0.55) contrast(1.1);
-      pointer-events: none; /* Prevent image drag interfering with scroll */
+      pointer-events: none;
+      display: block; /* Prevent inline spacing issues */
     }
     .hero-overlay {
       position: absolute; inset: 0; z-index: 1;
@@ -438,46 +438,95 @@
     .wa-float svg { width: 22px; height: 22px; flex: none; fill: currentColor; }
     .wa-float-label { white-space: nowrap; }
 
-    /* RANKING BRAZA STRIP */
+    /* RANKING BRAZA STRIP — Premium Redesign */
     .ranking-strip {
-      background: var(--charcoal); border-bottom: 1px solid var(--steel);
-      padding: 16px 0; position: relative; z-index: 90;
-      margin-top: 80px; /* Espaço para header fixo */
+      background: linear-gradient(180deg, #1a1815 0%, #0f0e0c 100%);
+      border-bottom: 1px solid var(--steel);
+      padding: 20px 0; position: relative; z-index: 90;
+      margin-top: 80px;
+    }
+    .ranking-strip::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--ember), transparent);
+      opacity: 0.4;
     }
     @media (max-width: 767px) {
-      .ranking-strip { margin-top: 72px; }
+      .ranking-strip { margin-top: 72px; padding: 16px 0; }
     }
     .ranking-inner {
-      display: flex; align-items: center; gap: 16px; overflow-x: auto;
+      display: flex; align-items: stretch; gap: 0; overflow-x: auto;
       scrollbar-width: none; -ms-overflow-style: none;
     }
     .ranking-inner::-webkit-scrollbar { display: none; }
+
+    /* Winner Block (1st Place) */
+    .ranking-winner-block {
+      display: flex; align-items: center; gap: 14px;
+      padding: 8px 20px 8px 0; margin-right: 20px;
+      border-right: 1px solid rgba(255,210,122,0.15);
+      flex-shrink: 0;
+    }
     .ranking-crown {
-      flex: none; font-size: 1.6rem; line-height: 1;
-      filter: drop-shadow(0 0 6px rgba(255,210,122,0.5));
+      font-size: 2rem; line-height: 1; flex: none;
+      filter: drop-shadow(0 2px 8px rgba(255,180,0,0.4));
     }
-    .ranking-pos-2 { color: #C0C0C0; font-weight: 700; }
-    .ranking-pos-3 { color: #CD7F32; font-weight: 700; }
-    .ranking-msg {
-      font-size: .65rem; color: var(--paper-deep); opacity: .7;
-      margin-left: auto; white-space: nowrap; font-style: italic;
+    .ranking-winner-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ranking-label {
+      font-family: var(--font-body); font-size: 0.6rem; color: var(--gold);
+      text-transform: uppercase; letter-spacing: 0.18em; font-weight: 700;
     }
-    .ranking-info { flex: 1; min-width: 0; }
-    .ranking-title {
-      font-family: var(--font-body); font-size: 0.65rem; color: var(--gold);
-      text-transform: uppercase; letter-spacing: 0.15em; font-weight: 700; margin-bottom: 2px;
+    .ranking-winner-name {
+      font-family: var(--font-display); font-size: clamp(1.2rem, 3vw, 1.6rem);
+      color: var(--paper); text-transform: uppercase; line-height: 1;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 220px;
     }
-    .ranking-winner {
-      font-family: var(--font-display); font-size: 1.1rem; color: var(--paper);
-      text-transform: uppercase; line-height: 1; white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis;
+    .ranking-winner-score {
+      font-family: var(--font-body); font-size: 0.7rem; color: var(--ember);
+      font-weight: 700; letter-spacing: 0.05em;
     }
-    .ranking-meta {
-      font-family: var(--font-body); font-size: 0.7rem; color: var(--paper-deep); margin-top: 2px;
+
+    /* Other Positions (2-5) */
+    .ranking-others {
+      display: flex; align-items: center; gap: 6px;
+      padding-left: 20px; flex: 1; min-width: 0;
     }
+    .ranking-entry {
+      display: flex; align-items: baseline; gap: 5px;
+      padding: 4px 10px; white-space: nowrap;
+      border-left: 1px solid rgba(255,255,255,0.06);
+    }
+    .ranking-entry:first-child { border-left: none; padding-left: 0; }
+    .ranking-pos {
+      font-family: var(--font-display); font-size: 0.85rem; font-weight: 700;
+      line-height: 1;
+    }
+    .ranking-name {
+      font-family: var(--font-body); font-size: 0.72rem; color: var(--paper-deep);
+      max-width: 100px; overflow: hidden; text-overflow: ellipsis;
+    }
+    /* Silver & Bronze accents */
+    .ranking-entry.pos-2 .ranking-pos { color: #C0C0C0; text-shadow: 0 0 6px rgba(192,192,192,0.3); }
+    .ranking-entry.pos-2 .ranking-name { color: #d4d4d4; }
+    .ranking-entry.pos-3 .ranking-pos { color: #CD7F32; text-shadow: 0 0 6px rgba(205,127,50,0.3); }
+    .ranking-entry.pos-3 .ranking-name { color: #ddb87a; }
+    .ranking-entry.pos-4 .ranking-pos,
+    .ranking-entry.pos-5 .ranking-pos { color: var(--paper-deep); opacity: 0.6; }
+    .ranking-entry.pos-4 .ranking-name,
+    .ranking-entry.pos-5 .ranking-name { opacity: 0.5; }
+
+    @media (max-width: 600px) {
+      .ranking-inner { flex-direction: column; gap: 10px; }
+      .ranking-winner-block { border-right: none; border-bottom: 1px solid rgba(255,210,122,0.15); padding: 0 0 10px 0; margin-right: 0; }
+      .ranking-winner-name { max-width: 260px; }
+      .ranking-others { padding-left: 0; gap: 4px; flex-wrap: wrap; }
+      .ranking-entry { padding: 2px 8px; }
+      .ranking-name { max-width: 80px; font-size: 0.65rem; }
+    }
+
     .ranking-empty {
       font-family: var(--font-body); font-size: 0.8rem; color: var(--paper-deep);
-      text-align: center; padding: 8px 0; width: 100%;
+      text-align: center; padding: 12px 0; width: 100%;
     }
     /* BRAZA ROCK BANNER */
     .rock-banner {
@@ -890,13 +939,12 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       const goTo = (index) => {
+        if (!slides.length) return;
         slides[current].classList.remove('active');
-        dots[current].classList.remove('active');
+        dots[current]?.classList.remove('active');
         current = (index + slides.length) % slides.length;
-        // Força reflow para reiniciar animação CSS de profundidade
-        void slides[current].offsetWidth;
         slides[current].classList.add('active');
-        dots[current].classList.add('active');
+        dots[current]?.classList.add('active');
       };
 
       const startAuto = () => {
@@ -977,11 +1025,23 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
             .slice(0, 5);
           const winner = entries.find(e => e.position === 1) || entries[0];
 
-          let html = `<div class="ranking-crown" aria-hidden="true">👑</div><div class="ranking-info"><div class="ranking-title">Rei do BRAZA no mês · ${data.period_label || ''}</div><div class="ranking-winner">${winner.customer_name || 'Vencedor'}</div><div class="ranking-meta">${winner.order_count} pedidos</div></div><div class="ranking-others" style="display:flex;gap:12px;margin-left:auto;font-size:.7rem;color:var(--paper-deep);align-items:center;flex-wrap:wrap;">`;
+          // Premium Ranking Layout
+          let html = `<div class="ranking-winner-block">
+            <div class="ranking-crown" aria-hidden="true">👑</div>
+            <div class="ranking-winner-info">
+              <span class="ranking-label">Rei do BRAZA · ${data.period_label || ''}</span>
+              <span class="ranking-winner-name">${winner.customer_name || 'Vencedor'}</span>
+              <span class="ranking-winner-score">${winner.order_count} PEDIDOS</span>
+            </div>
+          </div>
+          <div class="ranking-others">`;
 
           entries.slice(1).forEach(e => {
-            const posClass = e.position === 2 ? 'ranking-pos-2' : e.position === 3 ? 'ranking-pos-3' : '';
-            html += `<span style="white-space:nowrap" class="${posClass}"><strong>${e.position}º</strong> ${e.customer_name || '-'}</span>`;
+            const posClass = e.position <= 5 ? `pos-${e.position}` : '';
+            html += `<div class="ranking-entry ${posClass}">
+              <span class="ranking-pos">${e.position}º</span>
+              <span class="ranking-name">${e.customer_name || '-'}</span>
+            </div>`;
           });
           html += '</div>';
           strip.innerHTML = html;
