@@ -435,6 +435,72 @@
     .wa-float svg { width: 22px; height: 22px; flex: none; fill: currentColor; }
     .wa-float-label { white-space: nowrap; }
 
+    /* RANKING BRAZA STRIP */
+    .ranking-strip {
+      background: var(--charcoal); border-bottom: 1px solid var(--steel);
+      padding: 16px 0; position: relative; z-index: 90;
+    }
+    .ranking-inner {
+      display: flex; align-items: center; gap: 16px; overflow-x: auto;
+      scrollbar-width: none; -ms-overflow-style: none;
+    }
+    .ranking-inner::-webkit-scrollbar { display: none; }
+    .ranking-crown {
+      flex: none; width: 48px; height: 48px; background: var(--gradient-ember);
+      border-radius: 50%; display: grid; place-items: center; font-size: 1.4rem;
+      box-shadow: 0 4px 12px rgba(233,123,52,0.3);
+    }
+    .ranking-info { flex: 1; min-width: 0; }
+    .ranking-title {
+      font-family: var(--font-body); font-size: 0.65rem; color: var(--gold);
+      text-transform: uppercase; letter-spacing: 0.15em; font-weight: 700; margin-bottom: 2px;
+    }
+    .ranking-winner {
+      font-family: var(--font-display); font-size: 1.1rem; color: var(--paper);
+      text-transform: uppercase; line-height: 1; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .ranking-meta {
+      font-family: var(--font-body); font-size: 0.7rem; color: var(--paper-deep); margin-top: 2px;
+    }
+    .ranking-empty {
+      font-family: var(--font-body); font-size: 0.8rem; color: var(--paper-deep);
+      text-align: center; padding: 8px 0; width: 100%;
+    }
+    /* BRAZA ROCK BANNER */
+    .rock-banner {
+      padding: 80px 0; background: var(--black); position: relative; overflow: hidden;
+      border-block: 1px solid var(--steel); text-align: center;
+    }
+    .rock-banner::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.04;
+      background-image: repeating-linear-gradient(45deg, var(--paper) 0 1px, transparent 1px 24px);
+    }
+    .rock-content { position: relative; z-index: 2; max-width: 500px; margin: 0 auto; padding: 0 20px; }
+    .rock-icon { width: 48px; height: 48px; color: var(--ember); margin-bottom: 16px; }
+    .rock-title {
+      font-family: var(--font-display); font-size: clamp(1.8rem, 6vw, 3rem);
+      color: var(--paper); text-transform: uppercase; line-height: 0.9; margin-bottom: 8px;
+    }
+    .rock-sub {
+      font-family: var(--font-body); font-size: 0.9rem; color: var(--paper-deep);
+      margin-bottom: 24px; line-height: 1.5;
+    }
+    .btn-spotify {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 28px; background: var(--ember); color: var(--black);
+      font-family: var(--font-body); font-weight: 700; font-size: 0.9rem;
+      text-transform: uppercase; letter-spacing: 0.08em; border: none;
+      clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); text-decoration: none;
+    }
+    .btn-spotify:hover { filter: brightness(1.15); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(233,123,52,0.3); }
+    .btn-spotify svg { width: 20px; height: 20px; fill: currentColor; flex: none; }
+    @media (min-width: 768px) {
+      .ranking-inner { justify-content: center; }
+      .ranking-winner { font-size: 1.3rem; }
+    }
+
     /* Footer Minimalista */
     .footer { padding: 40px 0 calc(100px + var(--safe-b)); border-top: 1px solid var(--steel); font-size: 0.8rem; color: var(--paper-deep); position: relative; overflow: hidden; }
     .footer-hashtag {
@@ -527,6 +593,13 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
   </style>
 </head>
 <body>
+
+  <!-- RANKING BRAZA STRIP -->
+  <div class="ranking-strip" id="rankingStrip">
+    <div class="shell ranking-inner">
+      <div class="ranking-empty">Carregando ranking...</div>
+    </div>
+  </div>
 
   <header class="header">
     <div class="shell header-inner">
@@ -704,6 +777,19 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
     </section>
   </main>
 
+  <!-- BRAZA ROCK BANNER -->
+  <section class="rock-banner">
+    <div class="shell rock-content reveal-seq">
+      <svg class="rock-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+      <h2 class="rock-title">O SOM QUE TOCA NO BRAZA É ROCK.</h2>
+      <p class="rock-sub">Ouça a playlist BRAZA ROCK enquanto escolhe seu pedido favorito.</p>
+      <a href="https://open.spotify.com/playlist/4nuwmC5L2wR4E8OmXmxFtt?si=e89e8aa1b2324194" target="_blank" rel="noopener noreferrer" class="btn-spotify">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        OUÇA NOSSA PLAYLIST
+      </a>
+    </div>
+  </section>
+
   <footer class="footer">
     <div class="footer-hashtag" aria-hidden="true">#VEMPROBRAZA</div>
     <div class="shell footer-inner">
@@ -717,17 +803,7 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
         <a href="#" data-link="whatsapp">WhatsApp</a>
         <a href="#" data-link="maps">Mapa</a>
       </nav>
-      <!-- SOM DA CASA: Playlist Spotify -->
-      <div class="spotify-section" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--steel); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <svg viewBox="0 0 24 24" width="28" height="28" fill="#1DB954" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-        <div>
-          <div style="font-family: var(--font-display); font-size: 0.9rem; color: var(--paper); text-transform: uppercase; letter-spacing: 0.05em; line-height: 1;">Som da Casa</div>
-          <a href="https://open.spotify.com/playlist/4nuwmC5L2wR4E8OmXmxFtt?si=e89e8aa1b2324194" target="_blank" rel="noopener noreferrer" style="font-family: var(--font-body); font-size: 0.75rem; color: var(--ember); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-            Ouvir playlist no Spotify ↗
-          </a>
-        </div>
-      </div>
-    </div>
+          </div>
   </footer>
 
   <!-- WHATSAPP FLUTUANTE -->
@@ -846,11 +922,12 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
     if (!window.supabase) {
       const sbScript = document.createElement('script');
       sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-      sbScript.onload = () => { initDynamicContent(); trackPageView(); };
+      sbScript.onload = () => { initDynamicContent(); trackPageView(); loadRankingStrip(); };
       document.head.appendChild(sbScript);
     } else {
       initDynamicContent();
       trackPageView();
+      loadRankingStrip();
     }
 
     function trackPageView() {
@@ -864,8 +941,41 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
       }).then(() => {}).catch(() => {}); // Falha silenciosa não afeta experiência
     }
 
+    // Carregar Ranking Braza Ativo na faixa superior
+    function loadRankingStrip() {
+      if (!window.supabase) return;
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      sb.from('rankings')
+        .select('*, ranking_entries(*)')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .limit(1)
+        .single()
+        .then(({ data, error }) => {
+          const strip = document.querySelector('.ranking-inner');
+          if (!strip) return;
+          if (error || !data || !data.ranking_entries || data.ranking_entries.length === 0) {
+            strip.innerHTML = '<div class="ranking-empty">Ranking em breve. Quem será o Rei do BRAZA?</div>';
+            return;
+          }
+          const winner = data.ranking_entries.find(e => e.position === 1) || data.ranking_entries[0];
+          strip.innerHTML = `
+            <div class="ranking-crown" aria-hidden="true">👑</div>
+            <div class="ranking-info">
+              <div class="ranking-title">Rei do BRAZA no mês</div>
+              <div class="ranking-winner">${winner.customer_name}</div>
+              <div class="ranking-meta">${winner.order_count} pedidos · ${data.period_label || ''}</div>
+            </div>`;
+        })
+        .catch(() => {
+          const strip = document.querySelector('.ranking-inner');
+          if (strip) strip.innerHTML = '<div class="ranking-empty">Ranking indisponível no momento.</div>';
+        });
+    }
+
     function initDynamicContent() {
       if (!window.supabase) return;
+      loadRankingStrip();
       const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // Exemplo: Carregar promoções ativas (tabela 'promotions' deve ser criada no Supabase)

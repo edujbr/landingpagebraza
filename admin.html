@@ -71,6 +71,7 @@ td{padding:8px;border-bottom:1px solid rgba(52,49,44,.5);vertical-align:middle}
 <div class="tabs">
 <div class="tab active" data-tab="photos">Fotos</div>
 <div class="tab" data-tab="promos">Promoções</div>
+<div class="tab" data-tab="ranking">Ranking</div>
 </div>
 <!-- TAB FOTOS -->
 <div id="tab-photos" class="tab-content active">
@@ -84,6 +85,33 @@ td{padding:8px;border-bottom:1px solid rgba(52,49,44,.5);vertical-align:middle}
 <button class="btn" onclick="uploadPhoto()">Enviar Foto</button>
 </div>
 <table id="photosTable"><thead><tr><th>Img</th><th>Alt</th><th>Ordem</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table>
+</div>
+<!-- TAB RANKING -->
+<div id="tab-ranking" class="tab-content">
+<div class="card">
+<h3 style="font-size:1rem;margin-bottom:8px">Ranking de Clientes</h3>
+<p style="color:var(--muted);font-size:.85rem;margin-bottom:16px">Importe o relatório de clientes do Brendy (.CSV) e publique automaticamente os 5 clientes que mais pediram no período.</p>
+<label>Arquivo CSV</label>
+<input type="file" id="rankingFile" accept=".csv,text/csv">
+<div id="rankingStatus" style="font-size:.8rem;color:var(--gold);margin-bottom:12px;display:none"></div>
+<button class="btn" onclick="processRankingCsv()">Processar Ranking</button>
+</div>
+<!-- Preview / Edição -->
+<div id="rankingPreview" class="card" style="display:none">
+<h3 style="font-size:1rem;margin-bottom:4px">Pré-visualização do Ranking</h3>
+<div id="rankingPeriod" style="font-size:.8rem;color:var(--ember);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em"></div>
+<table id="rankingTable"><thead><tr><th>#</th><th>Cliente</th><th>Pedidos</th><th>Telefone</th><th>Ações</th></tr></thead><tbody></tbody></table>
+<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+<button class="btn" onclick="publishRanking()">Publicar Ranking</button>
+<button class="btn btn-outline" onclick="document.getElementById('rankingPreview').style.display='none'">Cancelar</button>
+<button class="btn btn-outline" onclick="document.getElementById('rankingFile').value='';document.getElementById('rankingPreview').style.display='none'">Novo Upload</button>
+</div>
+</div>
+<!-- Histórico -->
+<div class="card">
+<h3 style="font-size:1rem;margin-bottom:12px">Histórico de Rankings</h3>
+<table id="rankingHistoryTable"><thead><tr><th>Período</th><th>Status</th><th>Publicado em</th><th>Ações</th></tr></thead><tbody></tbody></table>
+</div>
 </div>
 <!-- TAB PROMOÇÕES -->
 <div id="tab-promos" class="tab-content">
@@ -285,5 +313,221 @@ function clearPromoForm(){
   document.getElementById('promoStart').value='';
   document.getElementById('promoEnd').value='';
   document.getElementById('promoFormTitle').textContent='Nova Promoção';
+}
+
+// --- RANKING DE CLIENTES ---
+let rankingPreviewData = null;
+
+async function loadRankingHistory() {
+  const tbody = document.querySelector('#rankingHistoryTable tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">Carregando...</td></tr>';
+  const { data, error } = await sb.from('rankings')
+    .select('id, period_label, status, published_at')
+    .order('published_at', { ascending: false });
+  tbody.innerHTML = '';
+  if (error || !data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">Nenhum ranking publicado ainda.</td></tr>';
+    return;
+  }
+  data.forEach(r => {
+    const tr = document.createElement('tr');
+    const pubDate = r.published_at ? new Date(r.published_at).toLocaleDateString('pt-BR') : '—';
+    const statusClass = r.status === 'published' ? 'status-active' : 'status-inactive';
+    const statusLabel = r.status === 'published' ? 'Publicado' : 'Rascunho';
+    tr.innerHTML = `
+      <td>${r.period_label || '—'}</td>
+      <td class="${statusClass}">${statusLabel}</td>
+      <td>${pubDate}</td>
+      <td>
+        <button class="btn btn-outline" style="padding:4px 10px;font-size:.7rem" onclick="viewRanking(${r.id})">Ver</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function maskPhoneLastFour(phone) {
+  if (!phone) return '—';
+  const digits = String(phone).replace(/\D/g, '');
+  if (digits.length < 4) return digits;
+  return 'final ' + digits.slice(-4);
+}
+
+function normalizeHeader(h) {
+  return (h || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+}
+
+function detectDelimiter(text) {
+  const firstLine = text.split('\n')[0] || '';
+  const commas = (firstLine.match(/,/g) || []).length;
+  const semis = (firstLine.match(/;/g) || []).length;
+  return semis > commas ? ';' : ',';
+}
+
+function parseCSV(text) {
+  const delimiter = detectDelimiter(text);
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
+  if (lines.length < 2) throw new Error('Arquivo vazio ou sem dados suficientes.');
+  const headers = lines[0].split(delimiter).map(normalizeHeader);
+  const idxName = headers.findIndex(h => /cliente|nome|customer/.test(h));
+  const idxPhone = headers.findIndex(h => /telefone|celular|whatsapp|phone/.test(h));
+  const idxOrders = headers.findIndex(h => /pedido|order|quantidade|total/.test(h));
+  if (idxName === -1) throw new Error('Coluna de nome/cliente não encontrada no CSV.');
+  if (idxOrders === -1) throw new Error('Coluna de pedidos/quantidade não encontrada no CSV.');
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(delimiter);
+    const name = (cols[idxName] || '').trim();
+    const phone = (cols[idxPhone] || '').trim();
+    const orders = parseInt((cols[idxOrders] || '0').replace(/\D/g, ''), 10) || 0;
+    if (!name || orders <= 0) continue;
+    rows.push({ name, phone, orders });
+  }
+  // Consolidar por telefone+nome normalizado
+  const map = new Map();
+  rows.forEach(r => {
+    const key = (r.phone.replace(/\D/g,'') || normalizeHeader(r.name));
+    if (map.has(key)) {
+      const existing = map.get(key);
+      // Se já consolidado, não somar novamente se a linha já representa total
+      // Assumimos que cada linha do Brendy já é consolidada; se houver duplicata exata, ignorar
+      if (existing.name !== r.name || existing.orders !== r.orders) {
+        existing.orders = Math.max(existing.orders, r.orders);
+      }
+    } else {
+      map.set(key, { ...r });
+    }
+  });
+  const consolidated = Array.from(map.values());
+  // Ordenar: maior pedidos primeiro, depois nome alfabético
+  consolidated.sort((a, b) => b.orders - a.orders || a.name.localeCompare(b.name, 'pt-BR'));
+  return consolidated;
+}
+
+async function processRankingCsv() {
+  const fileInput = document.getElementById('rankingFile');
+  const statusEl = document.getElementById('rankingStatus');
+  const previewEl = document.getElementById('rankingPreview');
+  if (!fileInput.files.length) { showToast('Selecione um arquivo CSV'); return; }
+  const file = fileInput.files[0];
+  if (!file.name.toLowerCase().endsWith('.csv')) { showToast('Apenas arquivos .csv são aceitos'); return; }
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Processando...';
+  previewEl.style.display = 'none';
+  try {
+    const text = await file.text();
+    const parsed = parseCSV(text);
+    if (parsed.length === 0) throw new Error('Nenhum cliente válido encontrado no arquivo.');
+    const top5 = parsed.slice(0, 5).map((c, i) => ({
+      position: i + 1,
+      customerName: c.name,
+      phoneLastFour: maskPhoneLastFour(c.phone),
+      orderCount: c.orders,
+      originalPosition: i + 1,
+      manuallyEdited: false
+    }));
+    // Detectar período pelo nome do arquivo ou usar mês atual
+    const now = new Date();
+    const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const periodLabel = `${monthNames[now.getMonth()]}/${now.getFullYear()}`;
+    rankingPreviewData = {
+      periodLabel,
+      periodStart: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10),
+      periodEnd: new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10),
+      sourceFileName: file.name,
+      entries: top5
+    };
+    renderRankingPreview();
+    statusEl.textContent = `✅ ${parsed.length} clientes processados. TOP 5 pronto para revisão.`;
+    statusEl.style.color = '#4ade80';
+  } catch (err) {
+    statusEl.textContent = '❌ ' + err.message;
+    statusEl.style.color = '#B84029';
+  }
+}
+
+function renderRankingPreview() {
+  if (!rankingPreviewData) return;
+  const previewEl = document.getElementById('rankingPreview');
+  const periodEl = document.getElementById('rankingPeriod');
+  const tbody = document.querySelector('#rankingTable tbody');
+  periodEl.textContent = `Período: ${rankingPreviewData.periodLabel}`;
+  tbody.innerHTML = '';
+  const medals = ['🥇','🥈','🥉','4º','5º'];
+  rankingPreviewData.entries.forEach((entry, i) => {
+    const tr = document.createElement('tr');
+    const editedBadge = entry.manuallyEdited ? '<span style="color:var(--gold);font-size:.65rem;margin-left:4px">(editado)</span>' : '';
+    tr.innerHTML = `
+      <td>${medals[i] || (i+1)+'º'}</td>
+      <td><input type="text" value="${entry.customerName}" onchange="updateRankingEntry(${i},'customerName',this.value)" style="margin:0;padding:4px 6px;font-size:.8rem"></td>
+      <td><input type="number" value="${entry.orderCount}" min="0" onchange="updateRankingEntry(${i},'orderCount',parseInt(this.value)||0)" style="margin:0;padding:4px 6px;font-size:.8rem;width:60px"></td>
+      <td><input type="text" value="${entry.phoneLastFour}" onchange="updateRankingEntry(${i},'phoneLastFour',this.value)" style="margin:0;padding:4px 6px;font-size:.8rem;width:90px"></td>
+      <td><button class="btn btn-danger" style="padding:4px 8px;font-size:.65rem" onclick="removeRankingEntry(${i})">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+  previewEl.style.display = 'block';
+}
+
+function updateRankingEntry(index, field, value) {
+  if (!rankingPreviewData || !rankingPreviewData.entries[index]) return;
+  rankingPreviewData.entries[index][field] = value;
+  rankingPreviewData.entries[index].manuallyEdited = true;
+}
+
+function removeRankingEntry(index) {
+  if (!rankingPreviewData) return;
+  rankingPreviewData.entries.splice(index, 1);
+  // Reordenar posições
+  rankingPreviewData.entries.forEach((e, i) => { e.position = i + 1; });
+  renderRankingPreview();
+}
+
+async function publishRanking() {
+  if (!rankingPreviewData || rankingPreviewData.entries.length === 0) { showToast('Nenhum dado para publicar'); return; }
+  try {
+    // Desativar rankings anteriores
+    await sb.from('rankings').update({ status: 'archived' }).eq('status', 'published');
+    // Inserir novo ranking
+    const { data: newRanking, error: rankErr } = await sb.from('rankings').insert({
+      period_label: rankingPreviewData.periodLabel,
+      period_start: rankingPreviewData.periodStart,
+      period_end: rankingPreviewData.periodEnd,
+      source_file_name: rankingPreviewData.sourceFileName,
+      status: 'published',
+      published_at: new Date().toISOString()
+    }).select().single();
+    if (rankErr || !newRanking) throw new Error(rankErr?.message || 'Erro ao criar ranking');
+    // Inserir entradas
+    const entries = rankingPreviewData.entries.map(e => ({
+      ranking_id: newRanking.id,
+      position: e.position,
+      customer_name: e.customerName,
+      phone_last_four: e.phoneLastFour,
+      order_count: e.orderCount,
+      original_position: e.originalPosition,
+      manually_edited: e.manuallyEdited
+    }));
+    const { error: entryErr } = await sb.from('ranking_entries').insert(entries);
+    if (entryErr) throw new Error(entryErr.message);
+    showToast('🏆 Ranking publicado com sucesso!');
+    document.getElementById('rankingPreview').style.display = 'none';
+    document.getElementById('rankingFile').value = '';
+    document.getElementById('rankingStatus').style.display = 'none';
+    rankingPreviewData = null;
+    loadRankingHistory();
+  } catch (err) {
+    showToast('Erro ao publicar: ' + err.message);
+  }
+}
+
+async function viewRanking(id) {
+  const { data: ranking, error } = await sb.from('rankings').select('*, ranking_entries(*)').eq('id', id).single();
+  if (error || !ranking) { showToast('Erro ao carregar ranking'); return; }
+  alert(`Ranking: ${ranking.period_label}\n\n${ranking.ranking_entries.map(e => `${e.position}º ${e.customer_name} — ${e.order_count} pedidos (${e.phone_last_four})`).join('\n')}`);
+}
+
+// Carregar histórico ao iniciar dashboard
+if (document.getElementById('tab-ranking')) {
+  loadRankingHistory();
 }
 </script>
