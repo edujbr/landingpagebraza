@@ -178,7 +178,6 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      overflow: hidden;
       padding-bottom: calc(100px + var(--safe-b));
     }
     .hero-grill-bg {
@@ -189,23 +188,26 @@
     }
     .hero-carousel {
       position: absolute; inset: 0; z-index: 1;
+      transform: translateZ(0); /* Force GPU layer to prevent scroll disappearance */
     }
     .hero-slide {
       position: absolute; inset: 0;
       opacity: 0;
       transform: scale(1.05);
       transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-      will-change: opacity, transform;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
+      z-index: 0;
+      pointer-events: none;
     }
     .hero-slide.active {
       opacity: 1;
       transform: scale(1);
+      z-index: 2;
+      pointer-events: auto;
     }
     .hero-slide img {
       width: 100%; height: 100%; object-fit: cover;
       filter: brightness(0.55) contrast(1.1);
+      pointer-events: none; /* Prevent image drag interfering with scroll */
     }
     .hero-overlay {
       position: absolute; inset: 0; z-index: 1;
@@ -440,7 +442,10 @@
     .ranking-strip {
       background: var(--charcoal); border-bottom: 1px solid var(--steel);
       padding: 16px 0; position: relative; z-index: 90;
-      margin-top: 0;
+      margin-top: 80px; /* Espaço para header fixo */
+    }
+    @media (max-width: 767px) {
+      .ranking-strip { margin-top: 72px; }
     }
     .ranking-inner {
       display: flex; align-items: center; gap: 16px; overflow-x: auto;
