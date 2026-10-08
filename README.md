@@ -133,6 +133,39 @@ create policy "Auth read views" on page_views for select using (auth.role() = 'a
 create policy "Public read images" on storage.objects for select using (bucket_id = 'site-images');
 create policy "Auth upload images" on storage.objects for insert with check (bucket_id = 'site-images' and auth.role() = 'authenticated');
 create policy "Auth delete images" on storage.objects for delete using (bucket_id = 'site-images' and auth.role() = 'authenticated');
+
+-- Tabelas do Ranking de Clientes
+create table rankings (
+  id bigint generated always as identity primary key,
+  period_label text,
+  period_start date,
+  period_end date,
+  source_file_name text,
+  status text default 'draft',
+  published_at timestamptz,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table ranking_entries (
+  id bigint generated always as identity primary key,
+  ranking_id bigint references rankings(id) on delete cascade,
+  position int,
+  customer_name text,
+  phone_last_four text,
+  order_count int,
+  original_position int,
+  manually_edited boolean default false,
+  created_at timestamptz default now()
+);
+
+alter table rankings enable row level security;
+alter table ranking_entries enable row level security;
+
+create policy "Public read rankings" on rankings for select using (true);
+create policy "Auth write rankings" on rankings for all using (auth.role() = 'authenticated');
+create policy "Public read ranking entries" on ranking_entries for select using (true);
+create policy "Auth write ranking entries" on ranking_entries for all using (auth.role() = 'authenticated');
 ```
 
 3.  Em **Authentication > Users**, crie o usuário administrador (e-mail + senha).
