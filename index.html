@@ -73,7 +73,7 @@
     /* Tipografia Oficial: Adumu Regular + DM Sans */
     h1, h2, h3, .brand-name { font-family: var(--font-display); text-transform: uppercase; line-height: 0.9; letter-spacing: 0.02em; font-weight: 400; }
     h1 { font-size: clamp(4rem, 18vw, 11rem); color: var(--paper); position: relative; z-index: 2; text-shadow: 0 4px 30px rgba(233,123,52,0.15); }
-    h1 span { display: block; color: var(--ember); transform: translateX(-3%); }
+    h1 span { display: block; color: var(--ember); text-align: center; margin-inline: auto; width: fit-content; }
     h2 { font-size: clamp(3rem, 10vw, 6rem); margin-bottom: 1.5rem; color: var(--white); }
     h2 em { font-style: normal; color: var(--ember); }
     p, li, .hero-sub, .story-text p, .address-box span, .dock-text small, .footer, .review-subtitle { font-family: var(--font-body); color: var(--paper-deep); }
@@ -468,6 +468,19 @@
     .dock-text b { display: block; font-family: var(--font-display); font-size: 1rem; color: var(--paper); }
     .dock-text small { font-size: 0.7rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.05em; }
     .dock-btn { flex: none; min-height: 48px; padding: 0 20px; font-size: 0.9rem; }
+@keyframes subtleShake {
+0%, 100% { transform: translateX(0); }
+20% { transform: translateX(-2px) rotate(-1deg); }
+40% { transform: translateX(2px) rotate(1deg); }
+60% { transform: translateX(-1px); }
+80% { transform: translateX(1px); }
+}
+.dock-btn:not(:hover):not(:focus-visible) {
+animation: subtleShake 0.4s ease-in-out 10s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+.dock-btn { animation: none !important; }
+}
 
     /* Animações */
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -727,10 +740,10 @@
     const STORE = {
       name: 'BRAZA FORTE',
       phone: '5565920012601', // Formato internacional sem símbolos
-      orderUrl: 'https://www.brazaforte.com/', // Link oficial de pedidos/cardápio
+      orderUrl: 'https://pedido.brendi.com.br/braza-forte', // Link oficial de pedidos
       address: 'Avenida Rotary Internacional, 210, Centro, Sapezal - MT',
       mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Avenida+Rotary+Internacional,+210,+Centro,+Sapezal-MT',
-      googleReviewUrl: '' // PENDENTE: Inserir link direto de avaliação do Google aqui
+      googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJr_CUlJPIaR52eXEAE' // Link direto de avaliação do Google
     };
 
     // Geração automática de links

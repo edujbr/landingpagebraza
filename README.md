@@ -44,10 +44,10 @@ Todas as informações dinâmicas estão centralizadas no objeto `STORE` dentro 
 const STORE = {
   name: 'BRAZA FORTE',
   phone: '5565920012601', // DDI + DDD + Número (apenas dígitos)
-  orderUrl: 'https://www.brazaforte.com/', // Link oficial de pedidos/cardápio
+  orderUrl: 'https://pedido.brendi.com.br/braza-forte', // Link oficial de pedidos
   address: 'Avenida Rotary Internacional, 210, Centro, Sapezal - MT',
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Avenida+Rotary+Internacional,+210,+Centro,+Sapezal-MT',
-  googleReviewUrl: '' // PENDENTE: Inserir link direto de avaliação do Google aqui
+  googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJr_CUlJPIaR52eXEAE' // Link direto de avaliação do Google
 };
 ```
 
