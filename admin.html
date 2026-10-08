@@ -10,7 +10,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
 .shell{max-width:900px;margin:0 auto;padding:20px;width:100%}
-h1,h2,h3{font-family:'Adumu','Anton',sans-serif;text-transform:uppercase;letter-spacing:.02em}
+h1,h2,h3,h4{font-family:'Adumu','Anton',sans-serif;text-transform:uppercase;letter-spacing:.02em}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;background:var(--ember);color:#000;font-weight:700;border:none;cursor:pointer;font-size:.9rem;text-transform:uppercase;letter-spacing:.05em;transition:filter .2s}
 .btn:hover{filter:brightness(1.15)}
 .btn-outline{background:transparent;border:1px solid var(--muted);color:var(--muted)}
@@ -27,507 +27,131 @@ label{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.1e
 table{width:100%;border-collapse:collapse;font-size:.85rem}
 th{text-align:left;padding:8px;border-bottom:1px solid var(--border);color:var(--gold);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em}
 td{padding:8px;border-bottom:1px solid rgba(52,49,44,.5);vertical-align:middle}
-.img-thumb{width:48px;height:48px;object-fit:cover;border:1px solid var(--border)}
 .status-active{color:#4ade80}.status-inactive{color:#888}
 #loginView,#dashboardView{display:none}
-.tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)}
-.tab{padding:12px 20px;cursor:pointer;font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s}
+.tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:12px 20px;cursor:pointer;font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
 .tab.active{color:var(--ember);border-bottom-color:var(--ember)}
 .tab-content{display:none}.tab-content.active{display:block}
-.toast{position:fixed;bottom:20px;right:20px;background:var(--ember);color:#000;padding:12px 20px;font-weight:700;font-size:.85rem;z-index:999;opacity:0;transition:opacity .3s}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--ember);color:#000;padding:12px 20px;font-weight:700;font-size:.85rem;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.show{opacity:1}
+.slot-card{background:rgba(0,0,0,0.2);border:1px dashed var(--border);padding:16px;margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.slot-preview{width:80px;height:60px;object-fit:cover;background:var(--bg);border:1px solid var(--border);flex:none}
+.slot-info{flex:1;min-width:200px}
+.slot-title{font-size:.8rem;color:var(--ember);font-weight:700;text-transform:uppercase;margin-bottom:4px}
+.mapping-row{display:flex;gap:12px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.mapping-row select{flex:1;min-width:150px;margin-bottom:0}
+.mapping-row span{font-size:.8rem;color:var(--muted);min-width:100px}
+.error-box{background:rgba(184,64,41,0.15);border:1px solid #B84029;padding:12px;margin-bottom:16px;font-size:.85rem;color:#ffaaaa;display:none}
+.schema-alert{background:rgba(255,210,122,0.1);border:1px solid var(--gold);padding:16px;margin-bottom:20px;font-size:.85rem;color:var(--gold);line-height:1.6}
+.schema-alert code{background:rgba(0,0,0,0.3);padding:2px 6px;font-size:.7rem;display:block;margin-top:8px;white-space:pre-wrap;word-break:break-all}
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
-
-<!-- LOGIN -->
 <div id="loginView" class="shell" style="margin:auto;max-width:400px">
 <h1 style="font-size:2rem;margin-bottom:8px;color:var(--ember)">BRAZA FORTE</h1>
 <p style="color:var(--muted);margin-bottom:24px;font-size:.9rem">Painel Administrativo</p>
 <div class="card">
-<label>E-mail</label>
-<input type="email" id="loginEmail" placeholder="admin@brazaforte.com">
-<label>Senha</label>
-<input type="password" id="loginPass" placeholder="••••••••">
+<label>E-mail</label><input type="email" id="loginEmail" placeholder="admin@brazaforte.com">
+<label>Senha</label><input type="password" id="loginPass" placeholder="••••••••">
 <button class="btn" style="width:100%;margin-top:8px" onclick="doLogin()">Entrar</button>
 <p id="loginError" style="color:#B84029;font-size:.8rem;margin-top:12px;display:none"></p>
-</div>
-</div>
-
-<!-- DASHBOARD -->
+</div></div>
 <div id="dashboardView">
 <div class="shell" style="display:flex;align-items:center;justify-content:space-between;padding-top:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
 <h2 style="font-size:1.2rem">Painel Admin</h2>
 <button class="btn btn-outline" style="padding:6px 14px;font-size:.75rem" onclick="doLogout()">Sair</button>
+</div><div class="shell">
+<div id="schemaAlert" class="schema-alert" style="display:none">
+⚠️ <strong>Tabelas não encontradas no Supabase.</strong><br>
+Execute o SQL do README no Supabase → SQL Editor antes de usar o painel.
 </div>
-<div class="shell">
-<!-- Métricas -->
 <div class="grid-2" style="margin:20px 0">
 <div class="card"><div class="stat-number" id="metricTotal">—</div><div class="stat-label">Visitas Totais</div></div>
 <div class="card"><div class="stat-number" id="metricToday">—</div><div class="stat-label">Visitas Hoje</div></div>
 </div>
-<!-- Tabs -->
 <div class="tabs">
-<div class="tab active" data-tab="photos">Fotos</div>
+<div class="tab active" data-tab="photos">Fotos por Bloco</div>
 <div class="tab" data-tab="promos">Promoções</div>
 <div class="tab" data-tab="ranking">Ranking</div>
 </div>
-<!-- TAB FOTOS -->
 <div id="tab-photos" class="tab-content active">
-<div class="card">
-<h3 style="font-size:1rem;margin-bottom:12px">Nova Foto</h3>
-<div class="grid-2">
-<div><label>Imagem</label><input type="file" id="photoFile" accept="image/*"></div>
-<div><label>Texto Alternativo</label><input type="text" id="photoAlt" placeholder="Descrição da foto"></div>
+<div class="card"><h3 style="font-size:1rem;margin-bottom:8px">Gerenciar Fotos por Seção</h3><p style="color:var(--muted);font-size:.8rem">Cada campo corresponde a um local específico na landing page.</p></div>
+<div class="card"><h4 style="font-size:.9rem;color:var(--ember);margin-bottom:12px">🎠 Carrossel Principal (Hero)</h4><div id="carouselSlots"></div></div>
+<div class="card"><h4 style="font-size:.9rem;color:var(--ember);margin-bottom:12px">📍 Abaixo do Botão "Ver Cardápio"</h4><div id="menuSlot"></div></div>
+<div class="card"><h4 style="font-size:.9rem;color:var(--ember);margin-bottom:12px">🔥 Seção "O Sabor Que Aparece"</h4><div id="gallerySlots"></div></div>
 </div>
-<label>Ordem</label><input type="number" id="photoOrder" value="0" min="0">
-<button class="btn" onclick="uploadPhoto()">Enviar Foto</button>
-</div>
-<table id="photosTable"><thead><tr><th>Img</th><th>Alt</th><th>Ordem</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table>
-</div>
-<!-- TAB RANKING -->
 <div id="tab-ranking" class="tab-content">
-<div class="card">
-<h3 style="font-size:1rem;margin-bottom:8px">Ranking de Clientes</h3>
-<p style="color:var(--muted);font-size:.85rem;margin-bottom:16px">Importe o relatório de clientes do Brendy (.CSV) e publique automaticamente os 5 clientes que mais pediram no período.</p>
-<label>Arquivo CSV</label>
-<input type="file" id="rankingFile" accept=".csv,text/csv">
+<div class="error-box" id="rankingError"></div>
+<div class="card"><h3 style="font-size:1rem;margin-bottom:8px">Ranking de Clientes</h3>
+<p style="color:var(--muted);font-size:.85rem;margin-bottom:16px">Importe o relatório CSV do Brendy e publique os 5 clientes que mais pediram.</p>
+<label>Arquivo CSV</label><input type="file" id="rankingFile" accept=".csv,text/csv">
 <div id="rankingStatus" style="font-size:.8rem;color:var(--gold);margin-bottom:12px;display:none"></div>
-<button class="btn" onclick="processRankingCsv()">Processar Ranking</button>
-</div>
-<!-- Preview / Edição -->
-<div id="rankingPreview" class="card" style="display:none">
-<h3 style="font-size:1rem;margin-bottom:4px">Pré-visualização do Ranking</h3>
+<button class="btn" onclick="processRankingCsv()">Processar Ranking</button></div>
+<div id="rankingMapping" class="card" style="display:none"><h3 style="font-size:1rem;margin-bottom:8px">Mapear Colunas do CSV</h3>
+<p style="color:var(--muted);font-size:.8rem;margin-bottom:12px">Confirme ou ajuste o mapeamento das colunas detectadas.</p>
+<div id="mappingRows"></div>
+<button class="btn" style="margin-top:12px" onclick="confirmMapping()">Confirmar e Gerar Preview</button></div>
+<div id="rankingPreview" class="card" style="display:none"><h3 style="font-size:1rem;margin-bottom:4px">Pré-visualização do Ranking</h3>
 <div id="rankingPeriod" style="font-size:.8rem;color:var(--ember);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em"></div>
 <table id="rankingTable"><thead><tr><th>#</th><th>Cliente</th><th>Pedidos</th><th>Telefone</th><th>Ações</th></tr></thead><tbody></tbody></table>
 <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
 <button class="btn" onclick="publishRanking()">Publicar Ranking</button>
 <button class="btn btn-outline" onclick="document.getElementById('rankingPreview').style.display='none'">Cancelar</button>
-<button class="btn btn-outline" onclick="document.getElementById('rankingFile').value='';document.getElementById('rankingPreview').style.display='none'">Novo Upload</button>
+<button class="btn btn-outline" onclick="resetRankingFlow()">Novo Upload</button></div></div>
+<div class="card"><h3 style="font-size:1rem;margin-bottom:12px">Histórico de Rankings</h3>
+<table id="rankingHistoryTable"><thead><tr><th>Período</th><th>Status</th><th>Publicado em</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
 </div>
-</div>
-<!-- Histórico -->
-<div class="card">
-<h3 style="font-size:1rem;margin-bottom:12px">Histórico de Rankings</h3>
-<table id="rankingHistoryTable"><thead><tr><th>Período</th><th>Status</th><th>Publicado em</th><th>Ações</th></tr></thead><tbody></tbody></table>
-</div>
-</div>
-<!-- TAB PROMOÇÕES -->
-<div id="tab-promos" class="tab-content">
-<div class="card">
+<div id="tab-promos" class="tab-content"><div class="card">
 <h3 style="font-size:1rem;margin-bottom:12px" id="promoFormTitle">Nova Promoção</h3>
 <input type="hidden" id="promoId">
 <label>Título</label><input type="text" id="promoTitle">
 <label>Descrição</label><textarea id="promoDesc" rows="2"></textarea>
-<div class="grid-2">
-<div><label>Texto do Botão</label><input type="text" id="promoBtnText" placeholder="Saiba Mais"></div>
-<div><label>URL do Botão</label><input type="url" id="promoBtnUrl" placeholder="https://..."></div>
-</div>
-<div class="grid-2">
-<div><label>Início</label><input type="date" id="promoStart"></div>
-<div><label>Fim</label><input type="date" id="promoEnd"></div>
-</div>
+<div class="grid-2"><div><label>Texto do Botão</label><input type="text" id="promoBtnText" placeholder="Saiba Mais"></div>
+<div><label>URL do Botão</label><input type="url" id="promoBtnUrl" placeholder="https://..."></div></div>
+<div class="grid-2"><div><label>Início</label><input type="date" id="promoStart"></div>
+<div><label>Fim</label><input type="date" id="promoEnd"></div></div>
 <div style="display:flex;gap:8px;margin-top:8px">
 <button class="btn" onclick="savePromo()">Salvar</button>
-<button class="btn btn-outline" onclick="clearPromoForm()">Limpar</button>
-</div>
-</div>
+<button class="btn btn-outline" onclick="clearPromoForm()">Limpar</button></div></div>
 <table id="promosTable"><thead><tr><th>Título</th><th>Período</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table>
-</div>
-</div>
-</div>
-
-<script>
+</div></div></div><script>
 const SUPABASE_URL='https://jubndqjzpthckxpabtog.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Ym5kcWp6cHRoY2t4cGFidG9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0MjE5ODEsImV4cCI6MjEwNjk5Nzk4MX0.bgV31GymC0op8yyLwWVJhWDL5kCT69pabnGfOlOhMl0';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-
-// Auth state
-sb.auth.getSession().then(({data:{session}})=>{
-  if(session)showDashboard();else showLogin();
-});
-sb.auth.onAuthStateChange((_e,session)=>{
-  if(session)showDashboard();else showLogin();
-});
-
+sb.auth.getSession().then(({data:{session}})=>{if(session)showDashboard();else showLogin()});
+sb.auth.onAuthStateChange((_e,session)=>{if(session)showDashboard();else showLogin()});
 function showLogin(){document.getElementById('loginView').style.display='block';document.getElementById('dashboardView').style.display='none'}
-function showDashboard(){document.getElementById('loginView').style.display='none';document.getElementById('dashboardView').style.display='block';loadMetrics();loadPhotos();loadPromos()}
-
-async function doLogin(){
-  const email=document.getElementById('loginEmail').value.trim();
-  const pass=document.getElementById('loginPass').value;
-  const errEl=document.getElementById('loginError');
-  errEl.style.display='none';
-  const{error}=await sb.auth.signInWithPassword({email,password:pass});
-  if(error){errEl.textContent=error.message;errEl.style.display='block'}
-}
+function showDashboard(){document.getElementById('loginView').style.display='none';document.getElementById('dashboardView').style.display='block';loadMetrics();loadPhotoSlots();loadPromos();if(document.getElementById('tab-ranking'))loadRankingHistory();checkSchema()}
+async function doLogin(){const email=document.getElementById('loginEmail').value.trim();const pass=document.getElementById('loginPass').value;const errEl=document.getElementById('loginError');errEl.style.display='none';const{error}=await sb.auth.signInWithPassword({email,password:pass});if(error){errEl.textContent=error.message;errEl.style.display='block'}}
 async function doLogout(){await sb.auth.signOut()}
-
-// Toast
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
-
-// Tabs
-document.querySelectorAll('.tab').forEach(tab=>{
-  tab.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
-  });
-});
-
-// Metrics
-async function loadMetrics(){
-  const{data,error}=await sb.from('page_views').select('id,viewed_at');
-  if(error){document.getElementById('metricTotal').textContent='0';document.getElementById('metricToday').textContent='0';return}
-  const total=data.length;
-  const today=new Date().toISOString().slice(0,10);
-  const todayCount=data.filter(r=>r.viewed_at&&r.viewed_at.slice(0,10)===today).length;
-  document.getElementById('metricTotal').textContent=total;
-  document.getElementById('metricToday').textContent=todayCount;
-}
-
-// Photos
-async function loadPhotos(){
-  const{data,error}=await sb.from('photos').select('*').order('sort_order',{ascending:true});
-  const tbody=document.querySelector('#photosTable tbody');
-  tbody.innerHTML='';
-  if(error||!data)return;
-  data.forEach(p=>{
-    const tr=document.createElement('tr');
-    const imgUrl=p.storage_path?sb.storage.from('site-images').getPublicUrl(p.storage_path).data.publicUrl:'';
-    tr.innerHTML=`
-      <td>${imgUrl?`<img src="${imgUrl}" class="img-thumb" alt="">`:''}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${p.alt_text||'—'}</td>
-      <td>${p.sort_order??0}</td>
-      <td class="${p.active?'status-active':'status-inactive'}">${p.active?'Ativa':'Inativa'}</td>
-      <td style="white-space:nowrap">
-        <button class="btn btn-outline" style="padding:4px 10px;font-size:.7rem;margin-right:4px" onclick="togglePhoto(${p.id},${!p.active})">${p.active?'Desativar':'Ativar'}</button>
-        <button class="btn btn-danger" style="padding:4px 10px;font-size:.7rem" onclick="deletePhoto(${p.id},'${p.storage_path}')">Excluir</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-async function uploadPhoto(){
-  const fileInput=document.getElementById('photoFile');
-  const alt=document.getElementById('photoAlt').value.trim();
-  const order=parseInt(document.getElementById('photoOrder').value)||0;
-  if(!fileInput.files.length){showToast('Selecione uma imagem');return}
-  const file=fileInput.files[0];
-  const ext=file.name.split('.').pop();
-  const path=`photos/${Date.now()}.${ext}`;
-  const{error:upErr}=await sb.storage.from('site-images').upload(path,file,{cacheControl:'3600',upsert:false});
-  if(upErr){showToast('Erro ao enviar: '+upErr.message);return}
-  const{error:dbErr}=await sb.from('photos').insert({storage_path:path,alt_text:alt,sort_order:order,active:true});
-  if(dbErr){showToast('Erro ao salvar: '+dbErr.message);return}
-  showToast('Foto enviada com sucesso!');
-  fileInput.value='';document.getElementById('photoAlt').value='';document.getElementById('photoOrder').value='0';
-  loadPhotos();
-}
-
-async function togglePhoto(id,active){
-  await sb.from('photos').update({active}).eq('id',id);
-  loadPhotos();
-}
-
-async function deletePhoto(id,path){
-  if(!confirm('Confirma exclusão desta foto?'))return;
-  if(path)await sb.storage.from('site-images').remove([path]);
-  await sb.from('photos').delete().eq('id',id);
-  showToast('Foto excluída');loadPhotos();
-}
-
-// Promos
-async function loadPromos(){
-  const{data,error}=await sb.from('promotions').select('*').order('created_at',{ascending:false});
-  const tbody=document.querySelector('#promosTable tbody');
-  tbody.innerHTML='';
-  if(error||!data)return;
-  data.forEach(p=>{
-    const now=new Date().toISOString().slice(0,10);
-    const isActive=p.active&&(p.start_date<=now)&&(!p.end_date||p.end_date>=now);
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td>${p.title||'—'}</td>
-      <td style="font-size:.75rem;color:var(--muted)">${p.start_date||'?'} → ${p.end_date||'∞'}</td>
-      <td class="${isActive?'status-active':'status-inactive'}">${isActive?'Ativa':'Inativa'}</td>
-      <td style="white-space:nowrap">
-        <button class="btn btn-outline" style="padding:4px 10px;font-size:.7rem;margin-right:4px" onclick="editPromo(${p.id})">Editar</button>
-        <button class="btn btn-outline" style="padding:4px 10px;font-size:.7rem;margin-right:4px" onclick="togglePromo(${p.id},${!p.active})">${p.active?'Desativar':'Ativar'}</button>
-        <button class="btn btn-danger" style="padding:4px 10px;font-size:.7rem" onclick="deletePromo(${p.id})">Excluir</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-async function savePromo(){
-  const id=document.getElementById('promoId').value;
-  const record={
-    title:document.getElementById('promoTitle').value.trim(),
-    description:document.getElementById('promoDesc').value.trim(),
-    button_text:document.getElementById('promoBtnText').value.trim(),
-    button_url:document.getElementById('promoBtnUrl').value.trim(),
-    start_date:document.getElementById('promoStart').value||null,
-    end_date:document.getElementById('promoEnd').value||null,
-    active:true
-  };
-  let error;
-  if(id){({error}=await sb.from('promotions').update(record).eq('id',id))}
-  else{({error}=await sb.from('promotions').insert(record))}
-  if(error){showToast('Erro: '+error.message);return}
-  showToast(id?'Promoção atualizada!':'Promoção criada!');
-  clearPromoForm();loadPromos();
-}
-
-async function editPromo(id){
-  const{data,error}=await sb.from('promotions').select('*').eq('id',id).single();
-  if(error||!data)return;
-  document.getElementById('promoId').value=data.id;
-  document.getElementById('promoTitle').value=data.title||'';
-  document.getElementById('promoDesc').value=data.description||'';
-  document.getElementById('promoBtnText').value=data.button_text||'';
-  document.getElementById('promoBtnUrl').value=data.button_url||'';
-  document.getElementById('promoStart').value=data.start_date||'';
-  document.getElementById('promoEnd').value=data.end_date||'';
-  document.getElementById('promoFormTitle').textContent='Editar Promoção';
-  document.querySelector('[data-tab="promos"]').click();
-}
-
-async function togglePromo(id,active){
-  await sb.from('promotions').update({active}).eq('id',id);loadPromos();
-}
-
-async function deletePromo(id){
-  if(!confirm('Confirma exclusão desta promoção?'))return;
-  await sb.from('promotions').delete().eq('id',id);showToast('Promoção excluída');loadPromos();
-}
-
-function clearPromoForm(){
-  document.getElementById('promoId').value='';
-  document.getElementById('promoTitle').value='';
-  document.getElementById('promoDesc').value='';
-  document.getElementById('promoBtnText').value='';
-  document.getElementById('promoBtnUrl').value='';
-  document.getElementById('promoStart').value='';
-  document.getElementById('promoEnd').value='';
-  document.getElementById('promoFormTitle').textContent='Nova Promoção';
-}
-
-// --- RANKING DE CLIENTES ---
-let rankingPreviewData = null;
-
-async function loadRankingHistory() {
-  const tbody = document.querySelector('#rankingHistoryTable tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">Carregando...</td></tr>';
-  const { data, error } = await sb.from('rankings')
-    .select('id, period_label, status, published_at')
-    .order('published_at', { ascending: false });
-  tbody.innerHTML = '';
-  if (error || !data || data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">Nenhum ranking publicado ainda.</td></tr>';
-    return;
-  }
-  data.forEach(r => {
-    const tr = document.createElement('tr');
-    const pubDate = r.published_at ? new Date(r.published_at).toLocaleDateString('pt-BR') : '—';
-    const statusClass = r.status === 'published' ? 'status-active' : 'status-inactive';
-    const statusLabel = r.status === 'published' ? 'Publicado' : 'Rascunho';
-    tr.innerHTML = `
-      <td>${r.period_label || '—'}</td>
-      <td class="${statusClass}">${statusLabel}</td>
-      <td>${pubDate}</td>
-      <td>
-        <button class="btn btn-outline" style="padding:4px 10px;font-size:.7rem" onclick="viewRanking(${r.id})">Ver</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-function maskPhoneLastFour(phone) {
-  if (!phone) return '—';
-  const digits = String(phone).replace(/\D/g, '');
-  if (digits.length < 4) return digits;
-  return 'final ' + digits.slice(-4);
-}
-
-function normalizeHeader(h) {
-  return (h || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
-}
-
-function detectDelimiter(text) {
-  const firstLine = text.split('\n')[0] || '';
-  const commas = (firstLine.match(/,/g) || []).length;
-  const semis = (firstLine.match(/;/g) || []).length;
-  return semis > commas ? ';' : ',';
-}
-
-function parseCSV(text) {
-  const delimiter = detectDelimiter(text);
-  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
-  if (lines.length < 2) throw new Error('Arquivo vazio ou sem dados suficientes.');
-  const headers = lines[0].split(delimiter).map(normalizeHeader);
-  const idxName = headers.findIndex(h => /cliente|nome|customer/.test(h));
-  const idxPhone = headers.findIndex(h => /telefone|celular|whatsapp|phone/.test(h));
-  const idxOrders = headers.findIndex(h => /pedido|order|quantidade|total/.test(h));
-  if (idxName === -1) throw new Error('Coluna de nome/cliente não encontrada no CSV.');
-  if (idxOrders === -1) throw new Error('Coluna de pedidos/quantidade não encontrada no CSV.');
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(delimiter);
-    const name = (cols[idxName] || '').trim();
-    const phone = (cols[idxPhone] || '').trim();
-    const orders = parseInt((cols[idxOrders] || '0').replace(/\D/g, ''), 10) || 0;
-    if (!name || orders <= 0) continue;
-    rows.push({ name, phone, orders });
-  }
-  // Consolidar por telefone+nome normalizado
-  const map = new Map();
-  rows.forEach(r => {
-    const key = (r.phone.replace(/\D/g,'') || normalizeHeader(r.name));
-    if (map.has(key)) {
-      const existing = map.get(key);
-      // Se já consolidado, não somar novamente se a linha já representa total
-      // Assumimos que cada linha do Brendy já é consolidada; se houver duplicata exata, ignorar
-      if (existing.name !== r.name || existing.orders !== r.orders) {
-        existing.orders = Math.max(existing.orders, r.orders);
-      }
-    } else {
-      map.set(key, { ...r });
-    }
-  });
-  const consolidated = Array.from(map.values());
-  // Ordenar: maior pedidos primeiro, depois nome alfabético
-  consolidated.sort((a, b) => b.orders - a.orders || a.name.localeCompare(b.name, 'pt-BR'));
-  return consolidated;
-}
-
-async function processRankingCsv() {
-  const fileInput = document.getElementById('rankingFile');
-  const statusEl = document.getElementById('rankingStatus');
-  const previewEl = document.getElementById('rankingPreview');
-  if (!fileInput.files.length) { showToast('Selecione um arquivo CSV'); return; }
-  const file = fileInput.files[0];
-  if (!file.name.toLowerCase().endsWith('.csv')) { showToast('Apenas arquivos .csv são aceitos'); return; }
-  statusEl.style.display = 'block';
-  statusEl.textContent = 'Processando...';
-  previewEl.style.display = 'none';
-  try {
-    const text = await file.text();
-    const parsed = parseCSV(text);
-    if (parsed.length === 0) throw new Error('Nenhum cliente válido encontrado no arquivo.');
-    const top5 = parsed.slice(0, 5).map((c, i) => ({
-      position: i + 1,
-      customerName: c.name,
-      phoneLastFour: maskPhoneLastFour(c.phone),
-      orderCount: c.orders,
-      originalPosition: i + 1,
-      manuallyEdited: false
-    }));
-    // Detectar período pelo nome do arquivo ou usar mês atual
-    const now = new Date();
-    const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const periodLabel = `${monthNames[now.getMonth()]}/${now.getFullYear()}`;
-    rankingPreviewData = {
-      periodLabel,
-      periodStart: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10),
-      periodEnd: new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10),
-      sourceFileName: file.name,
-      entries: top5
-    };
-    renderRankingPreview();
-    statusEl.textContent = `✅ ${parsed.length} clientes processados. TOP 5 pronto para revisão.`;
-    statusEl.style.color = '#4ade80';
-  } catch (err) {
-    statusEl.textContent = '❌ ' + err.message;
-    statusEl.style.color = '#B84029';
-  }
-}
-
-function renderRankingPreview() {
-  if (!rankingPreviewData) return;
-  const previewEl = document.getElementById('rankingPreview');
-  const periodEl = document.getElementById('rankingPeriod');
-  const tbody = document.querySelector('#rankingTable tbody');
-  periodEl.textContent = `Período: ${rankingPreviewData.periodLabel}`;
-  tbody.innerHTML = '';
-  const medals = ['🥇','🥈','🥉','4º','5º'];
-  rankingPreviewData.entries.forEach((entry, i) => {
-    const tr = document.createElement('tr');
-    const editedBadge = entry.manuallyEdited ? '<span style="color:var(--gold);font-size:.65rem;margin-left:4px">(editado)</span>' : '';
-    tr.innerHTML = `
-      <td>${medals[i] || (i+1)+'º'}</td>
-      <td><input type="text" value="${entry.customerName}" onchange="updateRankingEntry(${i},'customerName',this.value)" style="margin:0;padding:4px 6px;font-size:.8rem"></td>
-      <td><input type="number" value="${entry.orderCount}" min="0" onchange="updateRankingEntry(${i},'orderCount',parseInt(this.value)||0)" style="margin:0;padding:4px 6px;font-size:.8rem;width:60px"></td>
-      <td><input type="text" value="${entry.phoneLastFour}" onchange="updateRankingEntry(${i},'phoneLastFour',this.value)" style="margin:0;padding:4px 6px;font-size:.8rem;width:90px"></td>
-      <td><button class="btn btn-danger" style="padding:4px 8px;font-size:.65rem" onclick="removeRankingEntry(${i})">✕</button></td>`;
-    tbody.appendChild(tr);
-  });
-  previewEl.style.display = 'block';
-}
-
-function updateRankingEntry(index, field, value) {
-  if (!rankingPreviewData || !rankingPreviewData.entries[index]) return;
-  rankingPreviewData.entries[index][field] = value;
-  rankingPreviewData.entries[index].manuallyEdited = true;
-}
-
-function removeRankingEntry(index) {
-  if (!rankingPreviewData) return;
-  rankingPreviewData.entries.splice(index, 1);
-  // Reordenar posições
-  rankingPreviewData.entries.forEach((e, i) => { e.position = i + 1; });
-  renderRankingPreview();
-}
-
-async function publishRanking() {
-  if (!rankingPreviewData || rankingPreviewData.entries.length === 0) { showToast('Nenhum dado para publicar'); return; }
-  try {
-    // Desativar rankings anteriores
-    await sb.from('rankings').update({ status: 'archived' }).eq('status', 'published');
-    // Inserir novo ranking
-    const { data: newRanking, error: rankErr } = await sb.from('rankings').insert({
-      period_label: rankingPreviewData.periodLabel,
-      period_start: rankingPreviewData.periodStart,
-      period_end: rankingPreviewData.periodEnd,
-      source_file_name: rankingPreviewData.sourceFileName,
-      status: 'published',
-      published_at: new Date().toISOString()
-    }).select().single();
-    if (rankErr || !newRanking) throw new Error(rankErr?.message || 'Erro ao criar ranking');
-    // Inserir entradas
-    const entries = rankingPreviewData.entries.map(e => ({
-      ranking_id: newRanking.id,
-      position: e.position,
-      customer_name: e.customerName,
-      phone_last_four: e.phoneLastFour,
-      order_count: e.orderCount,
-      original_position: e.originalPosition,
-      manually_edited: e.manuallyEdited
-    }));
-    const { error: entryErr } = await sb.from('ranking_entries').insert(entries);
-    if (entryErr) throw new Error(entryErr.message);
-    showToast('🏆 Ranking publicado com sucesso!');
-    document.getElementById('rankingPreview').style.display = 'none';
-    document.getElementById('rankingFile').value = '';
-    document.getElementById('rankingStatus').style.display = 'none';
-    rankingPreviewData = null;
-    loadRankingHistory();
-  } catch (err) {
-    showToast('Erro ao publicar: ' + err.message);
-  }
-}
-
-async function viewRanking(id) {
-  const { data: ranking, error } = await sb.from('rankings').select('*, ranking_entries(*)').eq('id', id).single();
-  if (error || !ranking) { showToast('Erro ao carregar ranking'); return; }
-  alert(`Ranking: ${ranking.period_label}\n\n${ranking.ranking_entries.map(e => `${e.position}º ${e.customer_name} — ${e.order_count} pedidos (${e.phone_last_four})`).join('\n')}`);
-}
-
-// Carregar histórico ao iniciar dashboard
-if (document.getElementById('tab-ranking')) {
-  loadRankingHistory();
-}
+document.querySelectorAll('.tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));tab.classList.add('active');document.getElementById('tab-'+tab.dataset.tab).classList.add('active')})});
+async function checkSchema(){const{error}=await sb.from('rankings').select('id').limit(1);if(error&&error.code==='PGRST205')document.getElementById('schemaAlert').style.display='block'}
+async function loadMetrics(){const{data,error}=await sb.from('page_views').select('id,viewed_at');if(error){document.getElementById('metricTotal').textContent='0';document.getElementById('metricToday').textContent='0';return}const total=data.length;const today=new Date().toISOString().slice(0,10);const todayCount=data.filter(r=>r.viewed_at&&r.viewed_at.slice(0,10)===today).length;document.getElementById('metricTotal').textContent=total;document.getElementById('metricToday').textContent=todayCount}
+const PHOTO_SLOTS=[{id:'hero_1',label:'Carrossel Imagem 1',section:'carousel'},{id:'hero_2',label:'Carrossel Imagem 2',section:'carousel'},{id:'hero_3',label:'Carrossel Imagem 3',section:'carousel'},{id:'hero_4',label:'Carrossel Imagem 4',section:'carousel'},{id:'hero_5',label:'Carrossel Imagem 5',section:'carousel'},{id:'menu_below',label:'Abaixo Ver Cardapio',section:'menu'},{id:'gallery_1',label:'Galeria Imagem 1',section:'gallery'},{id:'gallery_2',label:'Galeria Imagem 2',section:'gallery'},{id:'gallery_3',label:'Galeria Imagem 3',section:'gallery'},{id:'gallery_4',label:'Galeria Imagem 4',section:'gallery'}];
+async function loadPhotoSlots(){const{data,error}=await sb.from('photos').select('*');const map={};if(!error&&data)data.forEach(p=>{map[p.slot_id]=p});const cEl=document.getElementById('carouselSlots'),mEl=document.getElementById('menuSlot'),gEl=document.getElementById('gallerySlots');cEl.innerHTML='';mEl.innerHTML='';gEl.innerHTML='';PHOTO_SLOTS.forEach(s=>{const photo=map[s.id];const imgUrl=photo?sb.storage.from('site-images').getPublicUrl(photo.storage_path).data.publicUrl:'';const div=document.createElement('div');div.className='slot-card';let h='';if(imgUrl){h+='<img src="'+imgUrl+'" class="slot-preview" alt="">'}else{h+='<div class="slot-preview" style="display:grid;place-items:center;font-size:.6rem;color:var(--muted)">Vazio</div>'}h+='<div class="slot-info"><div class="slot-title">'+s.label+'</div><div style="font-size:.75rem;color:var(--muted)">'+(photo?'Atualizada: '+new Date(photo.created_at).toLocaleDateString('pt-BR'):'Nenhuma imagem')+'</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><label class="btn btn-outline" style="padding:6px 12px;font-size:.7rem;cursor:pointer">'+(photo?'Substituir':'Enviar')+'<input type="file" accept="image/*" style="display:none" onchange="uploadSlotPhoto(''+s.id+'',this)"></label>';if(photo){h+='<button class="btn btn-danger" style="padding:6px 12px;font-size:.7rem" onclick="deleteSlotPhoto(''+s.id+'',''+photo.storage_path+'')">Remover</button>'}h+='</div>';div.innerHTML=h;const el=s.section==='carousel'?cEl:s.section==='menu'?mEl:gEl;el.appendChild(div)})}
+async function uploadSlotPhoto(slotId,input){if(!input.files.length)return;const file=input.files[0];const ext=file.name.split('.').pop();const path='slots/'+slotId+'_'+Date.now()+'.'+ext;const{error:u}=await sb.storage.from('site-images').upload(path,file,{cacheControl:'3600',upsert:true});if(u){showToast('Erro: '+u.message);return}const{error:d}=await sb.from('photos').upsert({slot_id:slotId,storage_path:path,alt_text:slotId,sort_order:0,active:true},{onConflict:'slot_id'});if(d){showToast('Erro: '+d.message);return}showToast('Foto atualizada!');loadPhotoSlots()}
+async function deleteSlotPhoto(slotId,sp){if(!confirm('Confirma remocao?'))return;if(sp)await sb.storage.from('site-images').remove([sp]);await sb.from('photos').delete().eq('slot_id',slotId);showToast('Removida');loadPhotoSlots()}
+async function loadPromos(){const{data,error}=await sb.from('promotions').select('*').order('created_at',{ascending:false});const tb=document.querySelector('#promosTable tbody');tb.innerHTML='';if(error||!data)return;data.forEach(p=>{const now=new Date().toISOString().slice(0,10);const active=p.active&&(p.start_date<=now)&&(!p.end_date||p.end_date>=now);const tr=document.createElement('tr');tr.innerHTML='<td>'+(p.title||'--')+'</td><td style="font-size:.75rem;color:var(--muted)">'+(p.start_date||'?')+' - '+(p.end_date||'inf')+'</td><td class="'+(active?'status-active':'status-inactive')+'">'+(active?'Ativa':'Inativa')+'</td><td style="white-space:nowrap"><button class="btn btn-outline" style="padding:4px 10px;font-size:.7rem;margin-right:4px" onclick="editPromo('+p.id+')">Editar</button><button class="btn btn-outline" style="padding:4px 10px;font-size:.7rem;margin-right:4px" onclick="togglePromo('+p.id+','+!active+')">'+(active?'Desativar':'Ativar')+'</button><button class="btn btn-danger" style="padding:4px 10px;font-size:.7rem" onclick="deletePromo('+p.id+')">Excluir</button></td>';tb.appendChild(tr)})}
+async function savePromo(){const id=document.getElementById('promoId').value;const rec={title:document.getElementById('promoTitle').value.trim(),description:document.getElementById('promoDesc').value.trim(),button_text:document.getElementById('promoBtnText').value.trim(),button_url:document.getElementById('promoBtnUrl').value.trim(),start_date:document.getElementById('promoStart').value||null,end_date:document.getElementById('promoEnd').value||null,active:true};let err;if(id){({error:err}=await sb.from('promotions').update(rec).eq('id',id))}else{({error:err}=await sb.from('promotions').insert(rec))}if(err){showToast('Erro: '+err.message);return}showToast(id?'Atualizada!':'Criada!');clearPromoForm();loadPromos()}
+async function editPromo(id){const{data,error}=await sb.from('promotions').select('*').eq('id',id).single();if(error||!data)return;document.getElementById('promoId').value=data.id;document.getElementById('promoTitle').value=data.title||'';document.getElementById('promoDesc').value=data.description||'';document.getElementById('promoBtnText').value=data.button_text||'';document.getElementById('promoBtnUrl').value=data.button_url||'';document.getElementById('promoStart').value=data.start_date||'';document.getElementById('promoEnd').value=data.end_date||'';document.getElementById('promoFormTitle').textContent='Editar Promocao';document.querySelector('[data-tab="promos"]').click()}
+async function togglePromo(id,active){await sb.from('promotions').update({active}).eq('id',id);loadPromos()}
+async function deletePromo(id){if(!confirm('Confirma exclusao?'))return;await sb.from('promotions').delete().eq('id',id);showToast('Excluida');loadPromos()}
+function clearPromoForm(){document.getElementById('promoId').value='';document.getElementById('promoTitle').value='';document.getElementById('promoDesc').value='';document.getElementById('promoBtnText').value='';document.getElementById('promoBtnUrl').value='';document.getElementById('promoStart').value='';document.getElementById('promoEnd').value='';document.getElementById('promoFormTitle').textContent='Nova Promocao'}
+let rankingPreviewData=null;
+async function loadRankingHistory(){const tbody=document.querySelector('#rankingHistoryTable tbody');if(!tbody)return;tbody.innerHTML='<tr><td colspan="4" style="color:var(--muted)">Carregando...</td></tr>';const{data,error}=await sb.from('rankings').select('id,period_label,status,published_at').order('published_at',{ascending:false});tbody.innerHTML='';if(error||!data||data.length===0){tbody.innerHTML='<tr><td colspan="4" style="color:var(--muted)">Nenhum ranking publicado.</td></tr>';return}data.forEach(r=>{const tr=document.createElement('tr');const pub=r.published_at?new Date(r.published_at).toLocaleDateString('pt-BR'):'--';const sc=r.status==='published'?'status-active':'status-inactive';const sl=r.status==='published'?'Publicado':'Rascunho';tr.innerHTML='<td>'+(r.period_label||'--')+'</td><td class="'+sc+'">'+sl+'</td><td>'+pub+'</td><td><button class="btn btn-outline" style="padding:4px 10px;font-size:.7rem" onclick="viewRanking('+r.id+')">Ver</button></td>';tbody.appendChild(tr)})}
+function maskPhone(p){if(!p)return'--';const d=String(p).replace(/\D/g,'');if(d.length<4)return d;return'final '+d.slice(-4)}
+function normH(h){return(h||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}
+function detectDelim(t){const f=t.split('\n')[0]||'';const c=(f.match(/,/g)||[]).length;const s=(f.match(/;/g)||[]).length;return s>c?';':','}
+function parseCSV(text){const delim=detectDelim(text);const lines=text.trim().split('\n').map(l=>l.trim()).filter(l=>l);if(lines.length<2)throw new Error('Arquivo vazio.');const headers=lines[0].split(delim).map(normH);const iN=headers.findIndex(h=>/cliente|nome|customer/.test(h));const iP=headers.findIndex(h=>/telefone|celular|whatsapp|phone/.test(h));const iO=headers.findIndex(h=>/pedido|order|quantidade|total/.test(h));if(iN===-1)throw new Error('Coluna nome nao encontrada.');if(iO===-1)throw new Error('Coluna pedidos nao encontrada.');const rows=[];for(let i=1;i<lines.length;i++){const cols=lines[i].split(delim);const name=(cols[iN]||'').trim();const phone=(cols[iP]||'').trim();const orders=parseInt((cols[iO]||'0').replace(/\D/g,''),10)||0;if(!name||orders<=0)continue;rows.push({name,phone,orders})}const map=new Map();rows.forEach(r=>{const key=(r.phone.replace(/\D/g,'')||normH(r.name));if(map.has(key)){const ex=map.get(key);if(ex.orders<r.orders)ex.orders=r.orders}else{map.set(key,{...r})}});const cons=Array.from(map.values());cons.sort((a,b)=>b.orders-a.orders||a.name.localeCompare(b.name,'pt-BR'));return cons}
+async function processRankingCsv(){const fi=document.getElementById('rankingFile');const st=document.getElementById('rankingStatus');const pr=document.getElementById('rankingPreview');const mp=document.getElementById('rankingMapping');if(!fi.files.length){showToast('Selecione CSV');return}const file=fi.files[0];if(!file.name.toLowerCase().endsWith('.csv')){showToast('Apenas .csv');return}st.style.display='block';st.textContent='Processando...';pr.style.display='none';mp.style.display='none';try{const text=await file.text();const parsed=parseCSV(text);if(parsed.length===0)throw new Error('Nenhum cliente valido.');const top5=parsed.slice(0,5).map((c,i)=>({position:i+1,customerName:c.name,phoneLastFour:maskPhone(c.phone),orderCount:c.orders,originalPosition:i+1,manuallyEdited:false}));const now=new Date();const mn=['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];const pl=mn[now.getMonth()]+'/'+now.getFullYear();rankingPreviewData={periodLabel:pl,periodStart:new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10),periodEnd:new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10),sourceFileName:file.name,entries:top5};renderPreview();st.textContent=parsed.length+' clientes. TOP 5 pronto.';st.style.color='#4ade80'}catch(e){st.textContent='Erro: '+e.message;st.style.color='#B84029'}}
+function renderPreview(){if(!rankingPreviewData)return;const pr=document.getElementById('rankingPreview');const pe=document.getElementById('rankingPeriod');const tb=document.querySelector('#rankingTable tbody');pe.textContent='Periodo: '+rankingPreviewData.periodLabel;tb.innerHTML='';const md=['1o','2o','3o','4o','5o'];rankingPreviewData.entries.forEach((e,i)=>{const tr=document.createElement('tr');const eb=e.manuallyEdited?'<span style="color:var(--gold);font-size:.65rem;margin-left:4px">(editado)</span>':'';tr.innerHTML='<td>'+(md[i]||(i+1)+'o')+eb+'</td><td><input type="text" value="'+e.customerName+'" onchange="updEntry('+i+',\'customerName\',this.value)" style="margin:0;padding:4px 6px;font-size:.8rem;width:100%"></td><td><input type="number" value="'+e.orderCount+'" min="0" onchange="updEntry('+i+',\'orderCount\',parseInt(this.value)||0)" style="margin:0;padding:4px 6px;font-size:.8rem;width:60px"></td><td><input type="text" value="'+e.phoneLastFour+'" onchange="updEntry('+i+',\'phoneLastFour\',this.value)" style="margin:0;padding:4px 6px;font-size:.8rem;width:90px"></td><td><button class="btn btn-danger" style="padding:4px 8px;font-size:.65rem" onclick="rmEntry('+i+')">X</button></td>';tb.appendChild(tr)});pr.style.display='block'}
+function updEntry(i,f,v){if(!rankingPreviewData||!rankingPreviewData.entries[i])return;rankingPreviewData.entries[i][f]=v;rankingPreviewData.entries[i].manuallyEdited=true}
+function rmEntry(i){if(!rankingPreviewData)return;rankingPreviewData.entries.splice(i,1);rankingPreviewData.entries.forEach((e,j)=>{e.position=j+1});renderPreview()}
+async function publishRanking(){if(!rankingPreviewData||rankingPreviewData.entries.length===0){showToast('Sem dados');return}try{await sb.from('rankings').update({status:'archived'}).eq('status','published');const{data:nr,error:re}=await sb.from('rankings').insert({period_label:rankingPreviewData.periodLabel,period_start:rankingPreviewData.periodStart,period_end:rankingPreviewData.periodEnd,source_file_name:rankingPreviewData.sourceFileName,status:'published',published_at:new Date().toISOString()}).select().single();if(re||!nr)throw new Error(re?.message||'Erro ranking');const entries=rankingPreviewData.entries.map(e=>({ranking_id:nr.id,position:e.position,customer_name:e.customerName,phone_last_four:e.phoneLastFour,order_count:e.orderCount,original_position:e.originalPosition,manually_edited:e.manuallyEdited}));const{error:ee}=await sb.from('ranking_entries').insert(entries);if(ee)throw new Error(ee.message);showToast('Ranking publicado!');document.getElementById('rankingPreview').style.display='none';document.getElementById('rankingFile').value='';document.getElementById('rankingStatus').style.display='none';rankingPreviewData=null;loadRankingHistory()}catch(e){showToast('Erro: '+e.message)}}
+async function viewRanking(id){const{data:r,error}=await sb.from('rankings').select('*, ranking_entries(*)').eq('id',id).single();if(error||!r){showToast('Erro carregar');return}let msg='Ranking: '+r.period_label+'\n';r.ranking_entries.forEach(e=>{msg+=e.position+'o '+e.customer_name+' - '+e.order_count+' pedidos ('+e.phone_last_four+')\n'});alert(msg)}
+function resetRankingFlow(){document.getElementById('rankingFile').value='';document.getElementById('rankingPreview').style.display='none';document.getElementById('rankingMapping').style.display='none';document.getElementById('rankingStatus').style.display='none';rankingPreviewData=null}
+function confirmMapping(){processRankingCsv()}
 </script>
