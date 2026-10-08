@@ -439,6 +439,10 @@
     .ranking-strip {
       background: var(--charcoal); border-bottom: 1px solid var(--steel);
       padding: 16px 0; position: relative; z-index: 90;
+      margin-top: 76px;
+    }
+    @media (max-width: 767px) {
+      .ranking-strip { margin-top: 48px; }
     }
     .ranking-inner {
       display: flex; align-items: center; gap: 16px; overflow-x: auto;
@@ -829,7 +833,7 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
       orderUrl: 'https://pedido.brendi.com.br/braza-forte', // Link oficial de pedidos
       address: 'Avenida Rotary Internacional, 210, Centro, Sapezal - MT',
       mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Avenida+Rotary+Internacional,+210,+Centro,+Sapezal-MT',
-      googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJr_CUlJPIaR52eXEAE' // Link direto de avaliação do Google
+      googleReviewUrl: 'https://g.page/r/CUlJPIaR52eXEAE/review' // Link direto de avaliação do Google
     };
 
     // Geração automática de links
