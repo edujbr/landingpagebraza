@@ -189,18 +189,19 @@
     }
     .hero-carousel {
       position: absolute; inset: 0; z-index: 1;
-      perspective: 1200px;
     }
     .hero-slide {
       position: absolute; inset: 0;
       opacity: 0;
-      transform: scale(1.1) translateZ(-60px);
+      transform: scale(1.05);
       transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
       will-change: opacity, transform;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .hero-slide.active {
       opacity: 1;
-      transform: scale(1) translateZ(0);
+      transform: scale(1);
     }
     .hero-slide img {
       width: 100%; height: 100%; object-fit: cover;
@@ -971,13 +972,13 @@ animation: subtleShake 0.4s ease-in-out 10s infinite;
             .slice(0, 5);
           const winner = entries.find(e => e.position === 1) || entries[0];
 
-          let html = `<div class="ranking-crown" aria-hidden="true">👑</div><div class="ranking-info"><div class="ranking-title">Rei do BRAZA no mês · ${data.period_label || ''}</div><div class="ranking-winner">${winner.customer_name}</div><div class="ranking-meta">${winner.order_count} pedidos</div></div><div class="ranking-others" style="display:flex;gap:12px;margin-left:auto;font-size:.7rem;color:var(--paper-deep);align-items:center;">`;
+          let html = `<div class="ranking-crown" aria-hidden="true">👑</div><div class="ranking-info"><div class="ranking-title">Rei do BRAZA no mês · ${data.period_label || ''}</div><div class="ranking-winner">${winner.customer_name || 'Vencedor'}</div><div class="ranking-meta">${winner.order_count} pedidos</div></div><div class="ranking-others" style="display:flex;gap:12px;margin-left:auto;font-size:.7rem;color:var(--paper-deep);align-items:center;flex-wrap:wrap;">`;
 
           entries.slice(1).forEach(e => {
             const posClass = e.position === 2 ? 'ranking-pos-2' : e.position === 3 ? 'ranking-pos-3' : '';
-            html += `<span style="white-space:nowrap" class="${posClass}"><strong>${e.position}º</strong> ${e.customer_name}</span>`;
+            html += `<span style="white-space:nowrap" class="${posClass}"><strong>${e.position}º</strong> ${e.customer_name || '-'}</span>`;
           });
-          html += '<span class="ranking-msg">No próximo mês tem mais 🔥</span></div>';
+          html += '</div>';
           strip.innerHTML = html;
         })
         .catch(() => {
