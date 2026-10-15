@@ -35,7 +35,8 @@ export function subscribe(fn: () => void) {
   return () => { listeners.delete(fn) }
 }
 
-export const getEnabled = () => enabled
+/** Som ligado e tocando de fato; antes do navegador liberar o áudio continua `false`. */
+export const getActive = () => enabled && ctx?.state === 'running'
 const GESTURES = ['pointerdown', 'touchend', 'keydown', 'click'] as const
 
 /**
@@ -48,7 +49,9 @@ export function initSound() {
   emit()
   if (!enabled) return
   const off = () => GESTURES.forEach((ev) => window.removeEventListener(ev, once, true))
-  const once = () => {
+  const once = (e: Event) => {
+    // O botão de som decide sozinho; destravar aqui faria o clique dele desligar o som.
+    if ((e.target as Element | null)?.closest?.('.sound-toggle')) return
     void unlock().then((ok) => { if (ok) off() })
   }
   GESTURES.forEach((ev) => window.addEventListener(ev, once, true))
@@ -63,6 +66,7 @@ async function unlock(): Promise<boolean> {
     const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!AC) return false
     ctx = new AC()
+    ctx.onstatechange = emit
     const comp = ctx.createDynamicsCompressor()
     comp.threshold.value = -14
     comp.ratio.value = 4

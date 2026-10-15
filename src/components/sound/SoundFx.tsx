@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useSyncExternalStore } from 'react'
-import { click, getEnabled, hover, initSound, setSound, subscribe } from '@/lib/sound'
+import { click, getActive, hover, initSound, setSound, subscribe } from '@/lib/sound'
 
 export function useSoundEnabled() {
-  return useSyncExternalStore(subscribe, getEnabled, () => false)
+  return useSyncExternalStore(subscribe, getActive, () => false)
 }
 
 function SpeakerIcon({ on }: { on: boolean }) {
