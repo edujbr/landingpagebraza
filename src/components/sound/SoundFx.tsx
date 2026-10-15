@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useSyncExternalStore } from 'react'
-import { click, getEnabled, getPref, hover, initSound, setSound, subscribe } from '@/lib/sound'
+import { useEffect, useSyncExternalStore } from 'react'
+import { click, getEnabled, hover, initSound, setSound, subscribe } from '@/lib/sound'
 
 export function useSoundEnabled() {
   return useSyncExternalStore(subscribe, getEnabled, () => false)
@@ -39,19 +39,10 @@ export function SoundToggle() {
   )
 }
 
-/** Convite para ativar o som, mais os sons de clique e hover em links e botões. */
+/** Liga o som (padrão) e adiciona os sons de clique e hover em links e botões. */
 export function SoundFx() {
-  const [ask, setAsk] = useState(false)
-
   useEffect(() => {
     initSound()
-    if (getPref() !== null) return
-    const show = window.setTimeout(() => setAsk(true), 2500)
-    const hide = window.setTimeout(() => setAsk(false), 20000)
-    return () => {
-      window.clearTimeout(show)
-      window.clearTimeout(hide)
-    }
   }, [])
 
   useEffect(() => {
@@ -73,7 +64,7 @@ export function SoundFx() {
     }
     const onClick = (e: MouseEvent) => {
       const el = (e.target as Element | null)?.closest?.('a, button')
-      if (el && !el.closest('.sound-toggle, .sound-ask')) click()
+      if (el && !el.closest('.sound-toggle')) click()
     }
     document.addEventListener('pointerover', onOver)
     document.addEventListener('pointerout', onOut)
@@ -85,22 +76,5 @@ export function SoundFx() {
     }
   }, [])
 
-  const answer = (on: boolean) => {
-    setSound(on)
-    setAsk(false)
-  }
-
-  return (
-    <div className={`sound-ask${ask ? ' is-open' : ''}`} role="dialog" aria-label="Ativar som" aria-hidden={!ask} inert={!ask}>
-      <span className="sound-ask-icon" aria-hidden="true"><SpeakerIcon on /></span>
-      <p>
-        <strong>Ativar som da brasa?</strong>
-        A montagem fica melhor com o chiado da chapa.
-      </p>
-      <div className="sound-ask-actions">
-        <button type="button" className="btn btn-sm" onClick={() => answer(true)}>Ativar</button>
-        <button type="button" className="sound-ask-skip" onClick={() => answer(false)}>Agora não</button>
-      </div>
-    </div>
-  )
+  return null
 }

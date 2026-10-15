@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import type { CSSProperties } from 'react'
 import { SplitHeading } from '@/components/motion/SplitHeading'
 import { rankingBackdrop } from '@/content/site'
 import { displayName, ordersLabel, phoneTail } from '@/lib/format'
@@ -8,6 +9,7 @@ export function Ranking({ ranking }: { ranking: PublishedRanking | null }) {
   const entries = ranking?.entries ?? []
   const podium = entries.slice(0, 3)
   const runners = entries.slice(3)
+  const top = Math.max(1, ...entries.map((e) => e.order_count))
 
   return (
     <section id="ranking" className="ranking">
@@ -56,6 +58,9 @@ export function Ranking({ ranking }: { ranking: PublishedRanking | null }) {
                   <small>{phoneTail(e.phone_last_four)}</small>
                 </span>
                 <span className="runner-count">{e.order_count} {ordersLabel(e.order_count)}</span>
+                <span className="runner-bar" aria-hidden="true">
+                  <i style={{ '--w': (e.order_count / top).toFixed(3) } as CSSProperties} />
+                </span>
               </li>
             ))}
           </ol>

@@ -8,25 +8,51 @@ import { Magnetic } from '@/components/motion/Magnetic'
 import { ScrollScenes } from '@/components/motion/ScrollScenes'
 import { SmoothScroll } from '@/components/motion/SmoothScroll'
 import { SplitHeading } from '@/components/motion/SplitHeading'
-import { AssemblyHero } from '@/components/three/AssemblyHero'
+import { Hero } from '@/components/Hero'
 import { SoundFx } from '@/components/sound/SoundFx'
 import { Topbar } from '@/components/Topbar'
-import { gallery, reel, signatures, stories, ticker } from '@/content/site'
+import { gallery, marquee, reel, signatures, stories, ticker } from '@/content/site'
 import { getPublishedRanking } from '@/lib/ranking'
 import { STORE } from '@/lib/store'
 
 export const revalidate = 300
+
+function Seal({ text }: { text: string }) {
+  const ring = `${text} ✦ ${text} ✦ `
+  return (
+    <span className="sig-seal" aria-hidden="true">
+      <svg viewBox="0 0 100 100">
+        <defs><path id="seal-ring" d="M50,50 m-37,0 a37,37 0 1,1 74,0 a37,37 0 1,1 -74,0" /></defs>
+        <text><textPath href="#seal-ring" textLength="230">{ring.toUpperCase()}</textPath></text>
+      </svg>
+      <i>★</i>
+    </span>
+  )
+}
+
+function MarqueeRow({ items, reverse }: { items: string[]; reverse?: boolean }) {
+  return (
+    <div className="marquee-track" data-marquee={reverse ? 'reverse' : ''} data-speed="34">
+      {[...items, ...items, ...items, ...items].map((t, i) => <span key={i}>{t}</span>)}
+    </div>
+  )
+}
 
 export default async function Home() {
   const ranking = await getPublishedRanking()
 
   return (
     <>
+      <div className="preloader" aria-hidden="true">
+        <div className="pre-logo"><Image src={logo} alt="" width={120} height={120} priority /></div>
+        <span className="pre-name">Braza Forte</span>
+        <span className="pre-bar"><i /></span>
+      </div>
       <a className="skip" href="#conteudo">Pular para o conteúdo</a>
       <Topbar />
 
       <main id="conteudo">
-        <AssemblyHero />
+        <Hero />
 
         <section id="atalhos" className="links">
           <div className="shell">
@@ -69,7 +95,7 @@ export default async function Home() {
             ))}
           </div>
           <div className="ticker" aria-hidden="true">
-            <div className="ticker-track">
+            <div className="ticker-track" data-marquee="" data-speed="30">
               {[...ticker, ...ticker].map((t, i) => <span key={i}>{t}</span>)}
             </div>
           </div>
@@ -91,10 +117,11 @@ export default async function Home() {
                     <ExtLink to="menu">
                       <figure>
                         <Image src={s.image.src} alt={s.image.alt} placeholder="blur" sizes="(max-width: 760px) 78vw, (max-width: 1024px) 50vw, 340px" />
+                        {s.seal && <Seal text={s.seal} />}
                       </figure>
                       <div className="sig-body">
                         <span className="sig-tag">{s.tag}</span>
-                        <h3>{s.name}</h3>
+                        <SplitHeading as="h3" text={s.name} className="sig-name" />
                         <p>{s.description}</p>
                         <span className="sig-cta">Ver no cardápio</span>
                       </div>
@@ -108,6 +135,11 @@ export default async function Home() {
             </div>
           </div>
         </section>
+
+        <div className="marquee" aria-hidden="true">
+          <div className="marquee-band marquee-back"><MarqueeRow items={marquee.back} reverse /></div>
+          <div className="marquee-band marquee-main"><MarqueeRow items={marquee.main} /></div>
+        </div>
 
         <Ranking ranking={ranking} />
 
@@ -180,7 +212,10 @@ export default async function Home() {
             <span><small>Som da casa</small>Ouça no Spotify</span>
           </ExtLink>
         </div>
-        <div className="footer-hashtag" aria-hidden="true">#VEMPROBRAZA</div>
+        <div className="footer-burn" aria-hidden="true">
+          <span className="burn-outline">Vem pro Braza</span>
+          <span className="burn-fill">Vem pro Braza</span>
+        </div>
         <div className="shell footer-bottom">
           <p>© {new Date().getFullYear()} BRAZA FORTE. Todos os direitos reservados.</p>
         </div>

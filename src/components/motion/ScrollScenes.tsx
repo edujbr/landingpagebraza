@@ -66,8 +66,70 @@ function cardTilt() {
   return () => offs.forEach((fn) => fn())
 }
 
+/** Nome de cada lanche acende letra a letra, um card depois do outro. */
+function signatureNames() {
+  const grid = $('.sig-grid')
+  if (!grid) return
+  const tl = gsap.timeline({ scrollTrigger: { trigger: grid, start: 'top 75%', once: true } })
+  $$('.sig-name', grid).forEach((h, i) => {
+    const chars = $$('.char', h)
+    tl.from(chars, {
+      opacity: 0,
+      yPercent: 70,
+      filter: 'brightness(4) blur(5px)',
+      duration: 0.7,
+      ease: 'power3.out',
+      stagger: 0.04,
+      onStart: () => typeBurst(chars.length, 0.04),
+    }, i * 0.35)
+  })
+}
+
+/**
+ * Faixas infinitas: andam sozinhas e aceleram com a velocidade da rolagem,
+ * invertendo o sentido quando a página sobe.
+ */
+function marquees() {
+  const tracks = $$('[data-marquee]').map((el) => ({
+    el,
+    dir: el.dataset.marquee === 'reverse' ? -1 : 1,
+    rate: 50 / Number(el.dataset.speed || 30),
+    x: 0,
+  }))
+  if (!tracks.length) return
+  tracks.forEach((t) => t.el.classList.add('is-driven'))
+  const wrap = gsap.utils.wrap(-50, 0)
+  const state = { dir: 1, boost: 0, speed: 1 }
+  const st = ScrollTrigger.create({
+    start: 0,
+    end: 'max',
+    onUpdate: (self) => {
+      state.dir = self.direction
+      state.boost = Math.min(Math.abs(self.getVelocity()) / 250, 8)
+    },
+  })
+  const step = (_: number, dt: number) => {
+    state.boost *= 0.93
+    state.speed += (state.dir * (1 + state.boost) - state.speed) * 0.1
+    const sec = Math.min(dt, 50) / 1000
+    for (const t of tracks) {
+      t.x = wrap(t.x - t.dir * t.rate * state.speed * sec)
+      t.el.style.transform = `translate3d(${t.x}%, 0, 0)`
+    }
+  }
+  gsap.ticker.add(step)
+  return () => {
+    gsap.ticker.remove(step)
+    st.kill()
+    tracks.forEach((t) => {
+      t.el.classList.remove('is-driven')
+      t.el.style.transform = ''
+    })
+  }
+}
+
 function headings() {
-  $$('.split').forEach((h) => {
+  $$('.split:not(.sig-name)').forEach((h) => {
     const chars = $$('.char', h)
     gsap.from(chars, {
       yPercent: 110,
@@ -174,10 +236,40 @@ function podium() {
   const crown = $('.crown', el)
   if (crown) {
     tl.from(crown, { y: -140, opacity: 0, scale: 1.8, rotate: -25, duration: 1, ease: 'bounce.out', onStart: fanfare }, '-=0.4')
-      .fromTo(crown, { filter: 'brightness(3)' }, { filter: 'brightness(1)', duration: 0.8 }, '<0.6')
+      .call(() => sparkBurst(crown.parentElement!), undefined, '<0.45')
+      .fromTo(crown, { filter: 'brightness(3)' }, { filter: 'brightness(1)', duration: 0.8 }, '<')
   }
   const runners = $$('.runners li')
-  if (runners.length) tl.from(runners, { x: -50, opacity: 0, stagger: 0.12, duration: 0.6, ease: 'power3.out' }, '-=0.6')
+  if (runners.length) {
+    tl.from(runners, { x: -50, opacity: 0, stagger: 0.12, duration: 0.6, ease: 'power3.out' }, '-=0.6')
+      .from($$('.runner-bar i'), { scaleX: 0, duration: 1.1, ease: 'power3.out', stagger: 0.12 }, '<0.2')
+  }
+}
+
+/** Explosão de faíscas e onda de calor em volta do avatar do 1º lugar. */
+function sparkBurst(host: HTMLElement) {
+  const layer = document.createElement('span')
+  layer.className = 'sparks'
+  host.appendChild(layer)
+  const ring = document.createElement('b')
+  layer.appendChild(ring)
+  gsap.fromTo(ring, { scale: 0.4, opacity: 0.9 }, { scale: 2.6, opacity: 0, duration: 0.9, ease: 'power2.out' })
+  const count = 26
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('i')
+    layer.appendChild(s)
+    const angle = (i / count) * Math.PI * 2 + Math.random() * 0.3
+    const dist = 70 + Math.random() * 90
+    gsap.timeline()
+      .fromTo(s, { x: 0, y: 0, scale: 1 + Math.random(), opacity: 1 }, {
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist * 0.8,
+        duration: 0.7 + Math.random() * 0.4,
+        ease: 'power3.out',
+      })
+      .to(s, { y: '+=40', opacity: 0, scale: 0.2, duration: 0.6, ease: 'power1.in' }, '-=0.2')
+  }
+  gsap.delayedCall(2, () => layer.remove())
 }
 
 /** Galeria: colunas em velocidades diferentes; fotos entram por uma máscara diagonal. */
@@ -203,10 +295,16 @@ function gallery(wide: boolean) {
   return () => gsap.set(tiles, { clearProps: 'clipPath' })
 }
 
+/** "VEM PRO BRAZA" começa só no contorno e a brasa preenche até o fim da página. */
 function footer() {
-  const tag = $('.footer-hashtag')
-  if (!tag) return
-  gsap.fromTo(tag, { xPercent: 6 }, { xPercent: -6, ease: 'none', scrollTrigger: { trigger: tag, start: 'top bottom', end: 'bottom top', scrub: true } })
+  const burn = $('.footer-burn')
+  if (!burn) return
+  gsap.fromTo(burn, { '--burn': 0 }, {
+    '--burn': 1,
+    ease: 'none',
+    scrollTrigger: { trigger: '.footer', start: 'top bottom', end: 'bottom bottom', scrub: 0.4 },
+  })
+  gsap.fromTo(burn, { xPercent: 4 }, { xPercent: -4, ease: 'none', scrollTrigger: { trigger: '.footer', start: 'top bottom', end: 'bottom bottom', scrub: true } })
 }
 
 export function ScrollScenes() {
@@ -222,8 +320,10 @@ export function ScrollScenes() {
           fine ? cardTilt() : undefined,
           storiesOrbit(),
           gallery(wide),
+          marquees(),
         ]
         headings()
+        signatureNames()
         podium()
         footer()
         const refresh = () => ScrollTrigger.refresh()

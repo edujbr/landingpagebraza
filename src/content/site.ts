@@ -71,12 +71,19 @@ export const ticker = [
   'Combos pra dividir', 'Cheddar derretendo', 'Fritas do Braza', '#VEMPROBRAZA',
 ]
 
-export type Signature = { name: string; tag: string; description: string; image: Photo }
+export const marquee = {
+  main: ['Hambúrguer artesanal', 'Na brasa', '#VEMPROBRAZA', 'Sapezal · MT', 'Delivery e salão'],
+  back: ['Braza Forte', 'Burger 180g', 'Feito na hora', 'Braza Forte', 'Mesa cheia'],
+}
+
+/** `seal` vira o selo giratório no canto da foto. */
+export type Signature = { name: string; tag: string; description: string; image: Photo; seal?: string }
 
 export const signatures: Signature[] = [
   {
     name: 'Braza Bacon',
     tag: 'O mais pedido',
+    seal: 'O mais pedido',
     description: 'O queridinho da casa: burger suculento, cheddar e bacon crocante.',
     image: { src: sigBacon, alt: 'Braza Bacon com cheddar, bacon e maionese da casa' },
   },

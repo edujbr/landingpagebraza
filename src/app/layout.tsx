@@ -32,9 +32,18 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
+/**
+ * Roda antes da primeira pintura: `data-motion` libera os estados iniciais das animações
+ * (sem JS o site aparece pronto) e `data-intro="seen"` pula a abertura do logo na mesma sessão.
+ */
+const bootScript = `(function(){var d=document.documentElement;try{if(matchMedia('(prefers-reduced-motion: no-preference)').matches)d.dataset.motion='1';if(sessionStorage.getItem('braza-intro'))d.dataset.intro='seen';else sessionStorage.setItem('braza-intro','1')}catch(e){}})()`
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${adumu.variable} ${dmSans.variable}`}>
+    <html lang="pt-BR" className={`${adumu.variable} ${dmSans.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
+      </head>
       <body>{children}</body>
     </html>
   )

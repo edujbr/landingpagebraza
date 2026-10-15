@@ -36,28 +36,32 @@ export function subscribe(fn: () => void) {
 }
 
 export const getEnabled = () => enabled
-export const getPref = () => pref
+const GESTURES = ['pointerdown', 'touchend', 'keydown', 'click'] as const
 
-/** Lê a preferência salva. Se estava ligado, destrava no primeiro gesto da visita. */
+/**
+ * Som ligado por padrão (só fica mudo se a pessoa desligou antes). Tenta tocar já no carregamento,
+ * o que alguns navegadores permitem; nos demais, o primeiro toque, clique ou tecla destrava.
+ */
 export function initSound() {
   pref = readPref()
-  if (pref === 'on') {
-    enabled = true
-    const once = () => {
-      unlock()
-      window.removeEventListener('pointerdown', once)
-      window.removeEventListener('keydown', once)
-    }
-    window.addEventListener('pointerdown', once)
-    window.addEventListener('keydown', once)
-  }
+  enabled = pref !== 'off'
   emit()
+  if (!enabled) return
+  const off = () => GESTURES.forEach((ev) => window.removeEventListener(ev, once, true))
+  const once = () => {
+    void unlock().then((ok) => { if (ok) off() })
+  }
+  GESTURES.forEach((ev) => window.addEventListener(ev, once, true))
+  void unlock().then((ok) => { if (ok) off() })
 }
 
-function unlock() {
+let welcomed = false
+
+/** Cria o contexto de áudio e tenta retomá-lo; resolve `true` quando o som está de fato tocando. */
+async function unlock(): Promise<boolean> {
   if (!ctx) {
     const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!AC) return
+    if (!AC) return false
     ctx = new AC()
     const comp = ctx.createDynamicsCompressor()
     comp.threshold.value = -14
@@ -69,8 +73,22 @@ function unlock() {
     const data = noise.getChannelData(0)
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
   }
-  if (ctx.state === 'suspended') void ctx.resume()
-  if (wantAmbient) startAmbient()
+  if (ctx.state === 'suspended') {
+    try { await ctx.resume() } catch {}
+  }
+  if (ctx.state !== 'running') return false
+  if (wantAmbient) {
+    startAmbient()
+    welcome()
+  }
+  return true
+}
+
+/** Fogo acendendo uma única vez por visita, quando o som libera com o hero na tela. */
+export function welcome() {
+  if (welcomed || !ready()) return
+  welcomed = true
+  ignite()
 }
 
 export function setSound(on: boolean) {
@@ -78,8 +96,7 @@ export function setSound(on: boolean) {
   pref = on ? 'on' : 'off'
   try { localStorage.setItem(KEY, pref) } catch {}
   if (on) {
-    unlock()
-    click()
+    void unlock().then(() => click())
   } else {
     stopAmbient()
   }
@@ -114,44 +131,6 @@ function tone(c: AudioContext, type: OscillatorType, freq: number, t: number, pe
   o.start(t)
   o.stop(t + attack + decay + 0.05)
   return o
-}
-
-/** Estalo curto de brasa. */
-function pop(c: AudioContext, t: number, gain: number) {
-  const src = noiseSource(c)
-  const hp = c.createBiquadFilter()
-  hp.type = 'bandpass'
-  hp.frequency.value = 1500 + Math.random() * 4500
-  hp.Q.value = 1.2
-  const g = c.createGain()
-  env(g, t, gain, 0.002, 0.03 + Math.random() * 0.05)
-  src.connect(hp).connect(g).connect(master!)
-  src.stop(t + 0.12)
-}
-
-/** Chiado da carne na chapa: ruído filtrado em faixa média-aguda, entrada suave e estalos discretos. */
-export function sizzle(duration = 1.8, level = 0.12) {
-  const c = ready()
-  if (!c) return
-  const t = c.currentTime
-  const src = noiseSource(c)
-  const hp = c.createBiquadFilter()
-  hp.type = 'highpass'
-  hp.frequency.value = 1800
-  const lp = c.createBiquadFilter()
-  lp.type = 'lowpass'
-  lp.frequency.value = 6000
-  lp.Q.value = 0.5
-  const g = c.createGain()
-  g.gain.setValueAtTime(0.0001, t)
-  g.gain.exponentialRampToValueAtTime(level, t + 0.18)
-  for (let s = 0.24; s < duration; s += 0.09) {
-    g.gain.linearRampToValueAtTime(level * (0.7 + Math.random() * 0.3) * (1 - s / duration), t + s)
-  }
-  g.gain.exponentialRampToValueAtTime(0.0001, t + duration)
-  src.connect(hp).connect(lp).connect(g).connect(master!)
-  src.stop(t + duration + 0.05)
-  for (let i = 0; i < duration * 7; i++) pop(c, t + 0.1 + Math.random() * duration * 0.75, 0.03 + Math.random() * 0.05)
 }
 
 let typing: AudioScheduledSourceNode[] = []
@@ -213,6 +192,38 @@ export function whoosh(up = true, size = 0.5) {
   src.stop(t + dur + 0.05)
 }
 
+/** Fogo acendendo: sopro grave que abre o filtro, corpo quente e algumas faíscas. */
+export function ignite() {
+  const c = ready()
+  if (!c) return
+  const t = c.currentTime
+  const src = noiseSource(c)
+  const lp = c.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.Q.value = 0.8
+  lp.frequency.setValueAtTime(180, t)
+  lp.frequency.exponentialRampToValueAtTime(2200, t + 0.45)
+  lp.frequency.exponentialRampToValueAtTime(500, t + 1.8)
+  const g = c.createGain()
+  g.gain.setValueAtTime(0.0001, t)
+  g.gain.exponentialRampToValueAtTime(0.2, t + 0.35)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 1.9)
+  src.connect(lp).connect(g).connect(master!)
+  src.stop(t + 2)
+
+  const o = c.createOscillator()
+  const og = c.createGain()
+  o.type = 'sine'
+  o.frequency.setValueAtTime(65, t)
+  o.frequency.exponentialRampToValueAtTime(110, t + 0.4)
+  env(og, t, 0.14, 0.2, 1)
+  o.connect(og).connect(master!)
+  o.start(t)
+  o.stop(t + 1.3)
+
+  for (let i = 0; i < 7; i++) tone(c, 'sine', 1800 + Math.random() * 2800, t + 0.25 + Math.random() * 0.9, 0.025, 0.003, 0.12)
+}
+
 /** Brilho subindo (atalhos entrando em órbita). */
 export function shimmer() {
   const c = ready()
@@ -230,48 +241,6 @@ export function pluck() {
   if (!c) return
   const t = c.currentTime
   ;[392, 493.88, 587.33, 783.99].forEach((f, i) => tone(c, 'triangle', f, t + i * 0.035, 0.06, 0.003, 0.45))
-}
-
-/** Camada assentando no lanche. `weight` 0–1 deixa o baque mais grave e forte. */
-export function thud(weight = 0.6) {
-  const c = ready()
-  if (!c) return
-  const t = c.currentTime
-  const o = c.createOscillator()
-  const g = c.createGain()
-  o.type = 'sine'
-  o.frequency.setValueAtTime(150 - weight * 50, t)
-  o.frequency.exponentialRampToValueAtTime(42, t + 0.22)
-  env(g, t, 0.35 + weight * 0.45, 0.005, 0.32)
-  o.connect(g).connect(master!)
-  o.start(t)
-  o.stop(t + 0.4)
-
-  const src = noiseSource(c)
-  const lp = c.createBiquadFilter()
-  lp.type = 'lowpass'
-  lp.frequency.value = 700
-  const ng = c.createGain()
-  env(ng, t, 0.18 * weight + 0.05, 0.003, 0.09)
-  src.connect(lp).connect(ng).connect(master!)
-  src.stop(t + 0.15)
-}
-
-/** Acorde quente quando o lanche fica pronto. */
-export function chord() {
-  const c = ready()
-  if (!c) return
-  const t = c.currentTime
-  const lp = c.createBiquadFilter()
-  lp.type = 'lowpass'
-  lp.frequency.setValueAtTime(600, t)
-  lp.frequency.exponentialRampToValueAtTime(2400, t + 0.6)
-  lp.connect(master!)
-  for (const f of [146.83, 220, 277.18, 329.63, 440]) {
-    const o = tone(c, 'sawtooth', f, t, 0.06, 0.35, 2.2, lp)
-    o.detune.value = (Math.random() - 0.5) * 12
-  }
-  ;[880, 1108.73, 1318.51].forEach((f, i) => tone(c, 'sine', f, t + 0.25 + i * 0.09, 0.05, 0.01, 1.2))
 }
 
 /** Cliques e hovers dos botões. */

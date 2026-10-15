@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import logo from '@/assets/logo.jpeg'
 import { ExtLink } from './ExtLink'
 import { SoundToggle } from './sound/SoundFx'
@@ -9,10 +9,13 @@ import { SoundToggle } from './sound/SoundFx'
 export function Topbar() {
   const [solid, setSolid] = useState(false)
   const [dock, setDock] = useState(false)
+  const bar = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     const onScroll = () => {
       setSolid(window.scrollY > 40)
+      const max = document.documentElement.scrollHeight - window.innerHeight
+      bar.current?.style.setProperty('--p', String(max > 0 ? Math.min(1, window.scrollY / max) : 0))
       const next = document.getElementById('atalhos')?.getBoundingClientRect().top ?? 0
       setDock(next < window.innerHeight * 0.85)
     }
@@ -41,6 +44,7 @@ export function Topbar() {
             <ExtLink to="order" className="btn btn-sm">Pedir agora</ExtLink>
           </div>
         </div>
+        <span className="scroll-progress" ref={bar} aria-hidden="true"><i /></span>
       </header>
 
       <nav className={`dock${dock ? ' is-visible' : ''}`} aria-label="Ações rápidas">
