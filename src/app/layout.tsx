@@ -35,8 +35,9 @@ export const viewport: Viewport = {
 /**
  * Roda antes da primeira pintura: `data-motion` libera os estados iniciais das animações
  * (sem JS o site aparece pronto) e `data-intro="seen"` pula a abertura do logo na mesma sessão.
+ * `?preview` (pré-visualizador do /admin) pula a abertura e marca `data-preview`.
  */
-const bootScript = `(function(){var d=document.documentElement;try{if(matchMedia('(prefers-reduced-motion: no-preference)').matches)d.dataset.motion='1';if(sessionStorage.getItem('braza-intro'))d.dataset.intro='seen';else sessionStorage.setItem('braza-intro','1')}catch(e){}})()`
+const bootScript = `(function(){var d=document.documentElement;try{if(/[?&]preview(=|&|$)/.test(location.search)){d.dataset.preview='1';d.dataset.intro='seen'}if(matchMedia('(prefers-reduced-motion: no-preference)').matches)d.dataset.motion='1';if(sessionStorage.getItem('braza-intro'))d.dataset.intro='seen';else sessionStorage.setItem('braza-intro','1')}catch(e){}})()`
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

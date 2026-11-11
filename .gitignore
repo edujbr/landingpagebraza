@@ -6,3 +6,6 @@ next-env.d.ts
 .env*.local
 .DS_Store
 fotos.zip
+
+# banco e fotos do painel /admin (ficam só no servidor)
+/data/

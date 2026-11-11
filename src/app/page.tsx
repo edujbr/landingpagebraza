@@ -12,8 +12,11 @@ import { SplitHeading } from '@/components/motion/SplitHeading'
 import { Hero } from '@/components/Hero'
 import { SoundFx } from '@/components/sound/SoundFx'
 import { Topbar } from '@/components/Topbar'
-import { gallery, marquee, reel, signatures, stories, ticker } from '@/content/site'
-import { getPublishedRanking } from '@/lib/ranking'
+import { PreviewBridge } from '@/components/PreviewBridge'
+import { marquee, ticker } from '@/content/site'
+import { imgProps } from '@/lib/img'
+import { getSiteContent } from '@/lib/server/content'
+import { getPublishedRanking } from '@/lib/server/ranking'
 import { STORE } from '@/lib/store'
 
 export const revalidate = 300
@@ -41,6 +44,7 @@ function MarqueeRow({ items, reverse }: { items: string[]; reverse?: boolean }) 
 
 export default async function Home() {
   const ranking = await getPublishedRanking()
+  const { hero, stories, reel, signatures, gallery, rankingBackdrop } = getSiteContent()
 
   return (
     <>
@@ -54,7 +58,7 @@ export default async function Home() {
       <Topbar />
 
       <main id="conteudo">
-        <Hero />
+        <Hero image={hero.image} alt={hero.alt} />
 
         <section id="atalhos" className="links">
           <div className="shell">
@@ -63,16 +67,16 @@ export default async function Home() {
               <SplitHeading text="Onde você quer" accent="ir?" />
             </header>
             <ul className="stories">
-              {stories.map((s) => {
+              {stories.map((s, i) => {
                 const inner = (
                   <>
-                    <span className="story-ring"><Image src={s.image} alt="" sizes="132px" /></span>
+                    <span className="story-ring"><Image {...imgProps(s.image)} alt="" sizes="132px" /></span>
                     <span className="story-label">{s.label}</span>
                     <span className="story-hint">{s.link === 'instagram' ? STORE.instagramHandle : s.hint}</span>
                   </>
                 )
                 return (
-                  <li key={s.label}>
+                  <li key={i} data-slot={`stories.${i}`}>
                     {s.link
                       ? <ExtLink to={s.link} className="story">{inner}</ExtLink>
                       : <a href={s.href} className="story">{inner}</a>}
@@ -83,12 +87,13 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="reel" aria-label="Fotos dos lanches">
+        <section id="fotos" className="reel" aria-label="Fotos dos lanches">
           <div className="reel-track">
             {[...reel, ...reel].map((p, i) => (
               <Image
                 key={i}
-                src={p.src}
+                {...imgProps(p.image)}
+                data-slot={i < reel.length ? `reel.${i}` : undefined}
                 alt={i < reel.length ? p.alt : ''}
                 aria-hidden={i >= reel.length || undefined}
                 sizes="240px"
@@ -114,11 +119,11 @@ export default async function Home() {
             </header>
             <div className="sig-rail">
               <div className="sig-grid">
-                {signatures.map((s) => (
-                  <article key={s.name} className="sig-card">
+                {signatures.map((s, i) => (
+                  <article key={i} className="sig-card" data-slot={`signatures.${i}`}>
                     <ExtLink to="menu">
                       <figure>
-                        <Image src={s.image.src} alt={s.image.alt} placeholder="blur" sizes="(max-width: 760px) 78vw, (max-width: 1024px) 50vw, 340px" />
+                        <Image {...imgProps(s.image)} alt={s.alt} sizes="(max-width: 760px) 78vw, (max-width: 1024px) 50vw, 340px" />
                         {s.seal && <Seal text={s.seal} />}
                       </figure>
                       <div className="sig-body">
@@ -143,7 +148,7 @@ export default async function Home() {
           <div className="marquee-band marquee-main"><MarqueeRow items={marquee.main} /></div>
         </div>
 
-        <Ranking ranking={ranking} />
+        <Ranking ranking={ranking} backdrop={rankingBackdrop.image} />
 
         <section id="galeria" className="gallery">
           <div className="shell">
@@ -228,6 +233,7 @@ export default async function Home() {
       <Magnetic />
       <CursorGlow />
       <SoundFx />
+      <PreviewBridge />
     </>
   )
 }

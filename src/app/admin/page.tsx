@@ -1,389 +1,252 @@
 'use client'
 
 import Image from 'next/image'
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
-import type { Session } from '@supabase/supabase-js'
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import logo from '@/assets/logo.jpeg'
-import { parseCustomersCsv } from '@/lib/csv'
-import { TOP_N } from '@/lib/ranking'
-import { getBrowserClient } from '@/lib/supabase'
+import type { Img, ImageRef, LibraryImage, SectionKey, SiteContent } from '@/lib/content-types'
+import { ApiError, LibraryModal, Preview, api, useToast } from './parts'
+import { RankingAdmin } from './RankingAdmin'
+import {
+  GalleryEditor, HeroEditor, RankingBackdropEditor, ReelEditor, SignaturesEditor, StoriesEditor, type EditorProps,
+} from './sections'
 
-const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-const STATUS_LABEL: Record<string, string> = { published: 'No site', archived: 'Arquivado', draft: 'Rascunho' }
+type State = { content: SiteContent; images: Record<ImageRef, Img> }
+type TabKey = SectionKey | 'password'
 
-type Status = { msg: string; kind?: 'ok' | 'err' }
-type Period = { label: string; start: string; end: string }
-type DraftEntry = { name: string; phone: string; orders: number; originalPosition: number | null; edited: boolean }
-type Draft = { period: Period; sourceFileName: string | null; entries: DraftEntry[] }
-type HistoryRow = {
-  id: number
-  period_label: string | null
-  status: string
-  published_at: string | null
-  ranking_entries: { position: number; customer_name: string; phone_last_four: string | null; order_count: number }[]
-}
+const TABS: { key: TabKey; label: string; anchor: string; where: string; icon: string }[] = [
+  { key: 'hero', label: 'Início', anchor: 'inicio', icon: '🔥', where: 'Foto grande do topo, atrás do título BRAZA FORTE.' },
+  { key: 'stories', label: 'Atalhos', anchor: 'atalhos', icon: '◎', where: 'Os círculos de "Onde você quer ir?" logo abaixo do topo.' },
+  { key: 'reel', label: 'Faixa de fotos', anchor: 'fotos', icon: '🎞', where: 'A faixa que corre sozinha na horizontal, antes de "Os que fazem fila".' },
+  { key: 'signatures', label: 'Os que fazem fila', anchor: 'assinaturas', icon: '🍔', where: 'Os cards dos lanches da casa: foto, nome e descrição.' },
+  { key: 'rankingBackdrop', label: 'Ranking', anchor: 'ranking', icon: '🏆', where: 'Pódio dos clientes que mais pediram e a foto de fundo da seção.' },
+  { key: 'gallery', label: 'Galeria', anchor: 'galeria', icon: '▦', where: 'O mosaico "Mesa cheia, casa quente".' },
+  { key: 'password', label: 'Senha', anchor: 'inicio', icon: '🔑', where: 'Senha de acesso a este painel.' },
+]
 
-const pad = (n: number) => String(n).padStart(2, '0')
-
-function periodFromMonth(value: string): Period {
-  const [y, m] = value.split('-').map(Number)
-  if (!y || !m) throw new Error('Escolha o mês do ranking.')
-  const lastDay = new Date(y, m, 0).getDate()
-  return { label: `${MONTHS[m - 1]}/${y}`, start: `${y}-${pad(m)}-01`, end: `${y}-${pad(m)}-${pad(lastDay)}` }
-}
-
-function StatusLine({ status }: { status: Status }) {
-  if (!status.msg) return null
-  return <p className={`status ${status.kind ?? ''}`}>{status.msg}</p>
+const EDITORS: { [K in SectionKey]: (p: EditorProps<K>) => ReactNode } = {
+  hero: HeroEditor,
+  stories: StoriesEditor,
+  reel: ReelEditor,
+  signatures: SignaturesEditor,
+  gallery: GalleryEditor,
+  rankingBackdrop: RankingBackdropEditor,
 }
 
 export default function AdminPage() {
-  const sb = getBrowserClient()
-  const [session, setSession] = useState<Session | null>(null)
-  const [ready, setReady] = useState(false)
-  const [loginStatus, setLoginStatus] = useState<Status>({ msg: '' })
-  const [csvStatus, setCsvStatus] = useState<Status>({ msg: '' })
-  const [publishStatus, setPublishStatus] = useState<Status>({ msg: '' })
-  const [month, setMonth] = useState(() => {
-    const d = new Date()
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`
-  })
-  const [draft, setDraft] = useState<Draft | null>(null)
-  const [publishing, setPublishing] = useState(false)
-  const [history, setHistory] = useState<HistoryRow[] | null>(null)
-  const [historyError, setHistoryError] = useState('')
-  const [openDetail, setOpenDetail] = useState<number | null>(null)
-  const [toast, setToast] = useState('')
-  const fileInput = useRef<HTMLInputElement>(null)
+  const [auth, setAuth] = useState<'loading' | 'out' | 'in'>('loading')
+  const [saved, setSaved] = useState<State | null>(null)
+  const [draft, setDraft] = useState<SiteContent | null>(null)
+  const [images, setImages] = useState<Record<ImageRef, Img>>({})
+  const [tab, setTab] = useState<TabKey>('hero')
+  const [saving, setSaving] = useState(false)
+  const [previewVersion, setPreviewVersion] = useState(1)
+  const [library, setLibrary] = useState<((item: LibraryImage) => void) | null>(null)
+  const frame = useRef<HTMLIFrameElement>(null)
+  const toast = useToast()
+  const notify = toast.show
 
-  const notify = (msg: string) => {
-    setToast(msg)
-    window.setTimeout(() => setToast(''), 2800)
+  const apply = (s: State) => {
+    setSaved(s)
+    setDraft(structuredClone(s.content))
+    setImages((prev) => ({ ...prev, ...s.images }))
   }
 
+  const load = useCallback(async () => {
+    try {
+      apply(await api<State>('state'))
+      setAuth('in')
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) setAuth('out')
+      else notify((err as Error).message, true)
+    }
+  }, [notify])
+
+  // Carrega uma vez ao abrir (e de novo só depois do login).
+  useEffect(() => { load() }, [load])
+
+  const handleError = useCallback((msg: string) => notify(msg, true), [notify])
+  const onApiError = (err: unknown) => {
+    if (err instanceof ApiError && err.status === 401) setAuth('out')
+    notify((err as Error).message, true)
+  }
+
+  const current = TABS.find((t) => t.key === tab)!
+  const section = tab === 'password' ? null : tab
+  const dirty = Boolean(section && saved && draft && JSON.stringify(saved.content[section]) !== JSON.stringify(draft[section]))
+  const anyDirty = Boolean(saved && draft && JSON.stringify(saved.content) !== JSON.stringify(draft))
+
+  // Avisa antes de fechar a aba com alterações não salvas.
   useEffect(() => {
-    sb.auth.getSession().then(({ data }) => { setSession(data.session); setReady(true) })
-    const { data: sub } = sb.auth.onAuthStateChange((_e, s) => setSession(s))
-    return () => sub.subscription.unsubscribe()
-  }, [sb])
+    if (!anyDirty) return
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [anyDirty])
 
-  const loadHistory = useCallback(async () => {
-    const { data, error } = await sb
-      .from('rankings')
-      .select('id, period_label, status, published_at, ranking_entries(position, customer_name, phone_last_four, order_count)')
-      .order('created_at', { ascending: false })
-    if (error) { setHistoryError(error.message); setHistory([]); return }
-    setHistoryError('')
-    setHistory(data as HistoryRow[])
-  }, [sb])
-
-  useEffect(() => { if (session) loadHistory() }, [session, loadHistory])
-
-  const refreshSite = async () => {
-    const token = (await sb.auth.getSession()).data.session?.access_token
-    if (!token) return
-    await fetch('/api/revalidate', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {})
+  const goTab = (k: TabKey) => {
+    if (dirty && !confirm('Você tem alterações não salvas nesta seção. Sair mesmo assim? (elas ficam guardadas até você recarregar a página)')) return
+    setTab(k)
   }
 
-  const login = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const form = new FormData(e.currentTarget)
-    setLoginStatus({ msg: 'Entrando...' })
-    const { error } = await sb.auth.signInWithPassword({
-      email: String(form.get('email')).trim(),
-      password: String(form.get('password')),
-    })
-    setLoginStatus(error ? { msg: 'E-mail ou senha inválidos.', kind: 'err' } : { msg: '' })
-  }
+  const focusSlot = (slot: string) => frame.current?.contentWindow?.postMessage({ type: 'braza:focus', slot }, location.origin)
+  const reloadPreview = () => setPreviewVersion((v) => v + 1)
 
-  const processCsv = async () => {
-    const file = fileInput.current?.files?.[0]
-    if (!file) return setCsvStatus({ msg: 'Selecione um arquivo CSV.', kind: 'err' })
+  const save = async () => {
+    if (!section || !draft) return
+    setSaving(true)
     try {
-      const period = periodFromMonth(month)
-      const { customers, aggregated } = parseCustomersCsv(await file.text())
-      if (!customers.length) throw new Error('Nenhum cliente com pedidos encontrado.')
-      setDraft({
-        period,
-        sourceFileName: file.name,
-        entries: customers.slice(0, TOP_N).map((c, i) => ({
-          name: c.name, phone: c.phone.slice(-4), orders: c.orders, originalPosition: i + 1, edited: false,
-        })),
-      })
-      setCsvStatus({
-        msg: `${customers.length} clientes lidos${aggregated ? ' (pedidos somados por cliente)' : ''}. Confira o TOP ${TOP_N} abaixo.`,
-        kind: 'ok',
-      })
-      setPublishStatus({ msg: '' })
+      apply(await api<State>('save', { section, value: draft[section] }))
+      notify('Salvo e publicado no site!')
+      reloadPreview()
     } catch (err) {
-      setCsvStatus({ msg: (err as Error).message, kind: 'err' })
-    }
-  }
-
-  const startManual = () => {
-    try {
-      setDraft({ period: periodFromMonth(month), sourceFileName: null, entries: [{ name: '', phone: '', orders: 0, originalPosition: null, edited: true }] })
-      setCsvStatus({ msg: '' })
-    } catch (err) {
-      setCsvStatus({ msg: (err as Error).message, kind: 'err' })
-    }
-  }
-
-  const updateEntry = (i: number, patch: Partial<DraftEntry>) =>
-    setDraft((d) => d && { ...d, entries: d.entries.map((e, j) => (j === i ? { ...e, ...patch, edited: true } : e)) })
-
-  const removeEntry = (i: number) => setDraft((d) => d && { ...d, entries: d.entries.filter((_, j) => j !== i) })
-
-  const addEntry = () =>
-    setDraft((d) => d && d.entries.length < TOP_N
-      ? { ...d, entries: [...d.entries, { name: '', phone: '', orders: 0, originalPosition: null, edited: true }] }
-      : d)
-
-  const sortEntries = () => setDraft((d) => d && { ...d, entries: [...d.entries].sort((a, b) => b.orders - a.orders) })
-
-  const cancelDraft = () => {
-    setDraft(null)
-    setCsvStatus({ msg: '' })
-    setPublishStatus({ msg: '' })
-    if (fileInput.current) fileInput.current.value = ''
-  }
-
-  const setPublished = async (id: number) => {
-    const { error: aErr } = await sb.from('rankings').update({ status: 'archived' }).eq('status', 'published')
-    if (aErr) throw aErr
-    const { error: pErr } = await sb.from('rankings').update({ status: 'published', published_at: new Date().toISOString() }).eq('id', id)
-    if (pErr) throw pErr
-    await refreshSite()
-  }
-
-  const publish = async () => {
-    if (!draft) return
-    const entries = draft.entries.map((e) => ({ ...e, name: e.name.trim() })).filter((e) => e.name)
-    if (!entries.length) return setPublishStatus({ msg: 'Adicione pelo menos um cliente com nome.', kind: 'err' })
-    if (!confirm(`Publicar o ranking de ${draft.period.label}? O ranking atual sai do site.`)) return
-
-    setPublishing(true)
-    setPublishStatus({ msg: 'Publicando...' })
-    try {
-      const { data: ranking, error: rErr } = await sb.from('rankings').insert({
-        period_label: draft.period.label,
-        period_start: draft.period.start,
-        period_end: draft.period.end,
-        source_file_name: draft.sourceFileName,
-        status: 'draft',
-      }).select('id').single()
-      if (rErr) throw rErr
-
-      const { error: eErr } = await sb.from('ranking_entries').insert(entries.map((e, i) => ({
-        ranking_id: ranking.id,
-        position: i + 1,
-        customer_name: e.name,
-        phone_last_four: e.phone || null,
-        order_count: e.orders,
-        original_position: e.originalPosition,
-        manually_edited: e.edited,
-      })))
-      if (eErr) {
-        await sb.from('rankings').delete().eq('id', ranking.id)
-        throw eErr
-      }
-
-      await setPublished(ranking.id)
-      notify('Ranking publicado!')
-      cancelDraft()
-      loadHistory()
-    } catch (err) {
-      setPublishStatus({ msg: `Erro ao publicar: ${(err as Error).message}`, kind: 'err' })
+      onApiError(err)
     } finally {
-      setPublishing(false)
+      setSaving(false)
     }
   }
 
-  const republish = async (row: HistoryRow) => {
-    if (!confirm(`Colocar "${row.period_label}" no site? O atual será arquivado.`)) return
+  const discard = () => section && saved && setDraft((d) => d && { ...d, [section]: structuredClone(saved.content[section]) })
+
+  const reset = async () => {
+    if (!section || !confirm(`Voltar "${current.label}" para as fotos e textos originais do site?`)) return
     try {
-      await setPublished(row.id)
-      notify('Ranking publicado!')
+      apply(await api<State>('reset', { section }))
+      notify('Seção voltou ao original.')
+      reloadPreview()
     } catch (err) {
-      notify(`Erro: ${(err as Error).message}`)
+      onApiError(err)
     }
-    loadHistory()
   }
 
-  const remove = async (row: HistoryRow) => {
-    const msg = row.status === 'published'
-      ? `"${row.period_label}" está no site e vai sumir de lá. Excluir mesmo assim?`
-      : `Excluir o ranking "${row.period_label}"?`
-    if (!confirm(msg)) return
-    const { error } = await sb.from('rankings').delete().eq('id', row.id)
-    if (!error && row.status === 'published') await refreshSite()
-    notify(error ? `Erro: ${error.message}` : 'Ranking excluído')
-    loadHistory()
+  const logout = async () => {
+    await api('logout', {}).catch(() => {})
+    setAuth('out')
   }
+
+  if (auth === 'loading') return <div className="wrap"><p className="muted">Carregando painel…</p></div>
+  if (auth === 'out') return <Login onIn={load} />
+
+  const editorProps = section && draft && {
+    value: draft[section],
+    onChange: (v: unknown) => setDraft((d) => d && { ...d, [section]: v }),
+    images,
+    addImage: (ref: ImageRef, img: Img) => setImages((m) => ({ ...m, [ref]: img })),
+    focusSlot,
+    onError: handleError,
+    openLibrary: (pick: (item: LibraryImage) => void) => setLibrary(() => pick),
+  }
+  const Editor = section ? (EDITORS[section] as (p: NonNullable<typeof editorProps>) => ReactNode) : null
 
   return (
-    <div className="wrap">
+    <div className="shell-admin">
       <header className="top">
         <div className="brand">
-          <Image src={logo} alt="" width={46} height={46} />
+          <Image src={logo} alt="" width={40} height={40} />
           <div><small>Painel</small><h1>BRAZA FORTE</h1></div>
         </div>
-        <div className="actions" style={{ margin: 0 }}>
-          <a className="btn btn-ghost btn-xs" href="/" target="_blank" rel="noopener">Ver site</a>
-          {session && <button className="btn btn-ghost btn-xs" type="button" onClick={() => sb.auth.signOut()}>Sair</button>}
+        <div className="actions tight">
+          <a className="btn btn-ghost btn-xs" href="/" target="_blank" rel="noopener">Ver site ↗</a>
+          <button className="btn btn-ghost btn-xs" type="button" onClick={logout}>Sair</button>
         </div>
       </header>
 
-      {ready && !session && (
-        <section className="card login">
-          <h2>Entrar</h2>
-          <p className="muted">Use o usuário administrador criado no Supabase.</p>
-          <form onSubmit={login}>
-            <label htmlFor="email">E-mail</label>
-            <input type="email" id="email" name="email" autoComplete="username" required />
-            <label htmlFor="password">Senha</label>
-            <input type="password" id="password" name="password" autoComplete="current-password" required />
-            <div className="actions"><button className="btn" type="submit">Entrar</button></div>
-            <StatusLine status={loginStatus} />
-          </form>
-        </section>
-      )}
+      <nav className="tabs" aria-label="Seções do site">
+        {TABS.map((t) => (
+          <button key={t.key} type="button" className={t.key === tab ? 'on' : ''} onClick={() => goTab(t.key)}>
+            <span aria-hidden="true">{t.icon}</span>{t.label}
+            {t.key !== 'password' && saved && draft && JSON.stringify(saved.content[t.key as SectionKey]) !== JSON.stringify(draft[t.key as SectionKey]) && <i className="dot" title="Não salvo" />}
+          </button>
+        ))}
+      </nav>
 
-      {session && (
-        <>
-          <section className="card">
-            <h2>Novo ranking</h2>
-            <p className="muted">
-              Exporte o relatório de clientes do Brendi em CSV. O painel reconhece colunas de nome, telefone e quantidade de
-              pedidos. Se o arquivo for uma lista de pedidos (uma linha por pedido), os pedidos de cada cliente são somados.
-            </p>
-            <div className="row">
-              <div>
-                <label htmlFor="csvFile">Arquivo CSV</label>
-                <input type="file" id="csvFile" accept=".csv,text/csv" ref={fileInput} />
-              </div>
-              <div>
-                <label htmlFor="periodMonth">Mês do ranking</label>
-                <input type="month" id="periodMonth" value={month} onChange={(e) => setMonth(e.target.value)} />
+      <div className={`layout${section ? '' : ' single'}`}>
+        <main className="editor">
+          <div className="editor-head">
+            <h2>{current.label}</h2>
+            <p className="muted">{current.where}</p>
+          </div>
+
+          {Editor && editorProps && <Editor {...editorProps} />}
+          {tab === 'rankingBackdrop' && <RankingAdmin notify={notify} onChanged={reloadPreview} />}
+          {tab === 'password' && <PasswordForm notify={notify} onExpired={() => setAuth('out')} />}
+
+          {section && (
+            <div className={`savebar${dirty ? ' is-dirty' : ''}`}>
+              <span>{dirty ? '● Alterações não salvas' : '✓ Tudo salvo'}</span>
+              <div className="actions tight">
+                <button type="button" className="btn btn-ghost btn-xs" onClick={reset}>Voltar ao original</button>
+                <button type="button" className="btn btn-ghost btn-xs" onClick={discard} disabled={!dirty}>Descartar</button>
+                <button type="button" className="btn" onClick={save} disabled={!dirty || saving}>{saving ? 'Salvando…' : 'Salvar e publicar'}</button>
               </div>
             </div>
-            <div className="actions">
-              <button className="btn" type="button" onClick={processCsv}>Processar CSV</button>
-              <button className="btn btn-ghost" type="button" onClick={startManual}>Montar manualmente</button>
-            </div>
-            <StatusLine status={csvStatus} />
-          </section>
-
-          {draft && (
-            <section className="card">
-              <h2>Pré-visualização do TOP {TOP_N}</h2>
-              <p className="muted">
-                Período: {draft.period.label}{draft.sourceFileName ? ` · arquivo ${draft.sourceFileName}` : ''}
-              </p>
-              <div className="scroll">
-                <table>
-                  <thead><tr><th>#</th><th>Cliente</th><th>Pedidos</th><th>Final do telefone</th><th /></tr></thead>
-                  <tbody>
-                    {draft.entries.map((e, i) => (
-                      <tr key={i}>
-                        <td className="pos">{i + 1}º</td>
-                        <td><input value={e.name} aria-label={`Nome do cliente ${i + 1}`} onChange={(ev) => updateEntry(i, { name: ev.target.value })} /></td>
-                        <td style={{ width: 110 }}>
-                          <input type="number" min={0} value={e.orders} aria-label={`Pedidos do cliente ${i + 1}`}
-                            onChange={(ev) => updateEntry(i, { orders: parseInt(ev.target.value, 10) || 0 })} />
-                        </td>
-                        <td style={{ width: 130 }}>
-                          <input inputMode="numeric" maxLength={4} value={e.phone} aria-label={`Final do telefone ${i + 1}`}
-                            onChange={(ev) => updateEntry(i, { phone: ev.target.value.replace(/\D/g, '').slice(0, 4) })} />
-                        </td>
-                        <td style={{ width: 80 }}>
-                          <button className="btn btn-danger btn-xs" type="button" onClick={() => removeEntry(i)}>Tirar</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="actions">
-                <button className="btn btn-ghost btn-xs" type="button" onClick={addEntry} disabled={draft.entries.length >= TOP_N}>+ Adicionar cliente</button>
-                <button className="btn btn-ghost btn-xs" type="button" onClick={sortEntries}>Reordenar por pedidos</button>
-              </div>
-              <div className="actions">
-                <button className="btn" type="button" onClick={publish} disabled={publishing}>Publicar no site</button>
-                <button className="btn btn-ghost" type="button" onClick={cancelDraft}>Cancelar</button>
-              </div>
-              <StatusLine status={publishStatus} />
-            </section>
           )}
+        </main>
 
-          <section className="card">
-            <h2>Histórico</h2>
-            <p className="muted">Só o ranking publicado aparece no site. Publicar um novo arquiva o anterior.</p>
-            <div className="scroll">
-              <table>
-                <thead><tr><th>Período</th><th>Status</th><th>Publicado em</th><th /></tr></thead>
-                <tbody>
-                  {history === null && <tr><td colSpan={4} className="muted">Carregando...</td></tr>}
-                  {historyError && (
-                    <tr><td colSpan={4} className="status err">
-                      Erro ao carregar: {historyError}. Confira se o SQL de migration_rankings.sql foi executado no Supabase.
-                    </td></tr>
-                  )}
-                  {history?.length === 0 && !historyError && <tr><td colSpan={4} className="muted">Nenhum ranking ainda.</td></tr>}
-                  {history?.map((r) => (
-                    <HistoryItem
-                      key={r.id}
-                      row={r}
-                      open={openDetail === r.id}
-                      onToggle={() => setOpenDetail(openDetail === r.id ? null : r.id)}
-                      onPublish={() => republish(r)}
-                      onDelete={() => remove(r)}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        </>
-      )}
+        {section && <aside><Preview anchor={current.anchor} version={previewVersion} frameRef={frame} /></aside>}
+      </div>
 
-      {toast && <div className="toast" role="status">{toast}</div>}
+      {library && <LibraryModal onPick={library} onClose={() => setLibrary(null)} onError={handleError} />}
+      {toast.node}
     </div>
   )
 }
 
-function HistoryItem({ row, open, onToggle, onPublish, onDelete }: {
-  row: HistoryRow
-  open: boolean
-  onToggle: () => void
-  onPublish: () => void
-  onDelete: () => void
-}) {
-  const entries = [...(row.ranking_entries ?? [])].sort((a, b) => a.position - b.position)
+function Login({ onIn }: { onIn: () => void }) {
+  const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setBusy(true)
+    setMsg('')
+    try {
+      await api('login', { password: new FormData(e.currentTarget).get('password') })
+      onIn()
+    } catch (err) {
+      setMsg((err as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
   return (
-    <>
-      <tr>
-        <td>{row.period_label || '—'}</td>
-        <td><span className={`tag ${row.status}`}>{STATUS_LABEL[row.status] ?? row.status}</span></td>
-        <td>{row.published_at ? new Date(row.published_at).toLocaleString('pt-BR') : '—'}</td>
-        <td className="right">
-          <button className="btn btn-ghost btn-xs" type="button" onClick={onToggle}>{open ? 'Fechar' : 'Ver'}</button>
-          {row.status !== 'published' && <button className="btn btn-ghost btn-xs" type="button" onClick={onPublish}>Publicar</button>}
-          <button className="btn btn-danger btn-xs" type="button" onClick={onDelete}>Excluir</button>
-        </td>
-      </tr>
-      {open && (
-        <tr className="detail">
-          <td colSpan={4}>
-            {entries.length === 0 && 'Sem clientes.'}
-            {entries.map((e) => (
-              <div key={e.position}>
-                {e.position}º {e.customer_name} — {e.order_count} pedidos{e.phone_last_four ? ` (final ${e.phone_last_four})` : ''}
-              </div>
-            ))}
-          </td>
-        </tr>
-      )}
-    </>
+    <div className="login">
+      <Image src={logo} alt="" width={84} height={84} />
+      <h1>Painel BRAZA FORTE</h1>
+      <form onSubmit={submit}>
+        <label className="field"><span>Senha</span>
+          <input type="password" name="password" autoComplete="current-password" autoFocus required />
+        </label>
+        <button className="btn" type="submit" disabled={busy}>{busy ? 'Entrando…' : 'Entrar'}</button>
+        {msg && <p className="status err">{msg}</p>}
+      </form>
+    </div>
+  )
+}
+
+function PasswordForm({ notify, onExpired }: { notify: (m: string, err?: boolean) => void; onExpired: () => void }) {
+  const [busy, setBusy] = useState(false)
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const form = e.currentTarget
+    const f = new FormData(form)
+    if (f.get('next') !== f.get('confirm')) return notify('A confirmação não bate com a nova senha.', true)
+    setBusy(true)
+    try {
+      await api('password', { current: f.get('current'), next: f.get('next') })
+      form.reset()
+      notify('Senha trocada! Outros aparelhos conectados foram desconectados.')
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) onExpired()
+      notify((err as Error).message, true)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <form className="sub-card narrow" onSubmit={submit}>
+      <label className="field"><span>Senha atual</span><input type="password" name="current" autoComplete="current-password" required /></label>
+      <label className="field"><span>Nova senha (mínimo 8 caracteres)</span><input type="password" name="next" minLength={8} autoComplete="new-password" required /></label>
+      <label className="field"><span>Repita a nova senha</span><input type="password" name="confirm" minLength={8} autoComplete="new-password" required /></label>
+      <div className="actions"><button className="btn" type="submit" disabled={busy}>{busy ? 'Trocando…' : 'Trocar senha'}</button></div>
+    </form>
   )
 }

@@ -1,11 +1,12 @@
 import Image from 'next/image'
 import type { CSSProperties } from 'react'
 import { SplitHeading } from '@/components/motion/SplitHeading'
-import { rankingBackdrop } from '@/content/site'
+import type { Img } from '@/lib/content-types'
+import { imgProps } from '@/lib/img'
 import { displayName, ordersLabel, phoneTail } from '@/lib/format'
 import type { PublishedRanking } from '@/lib/ranking'
 
-export function Ranking({ ranking }: { ranking: PublishedRanking | null }) {
+export function Ranking({ ranking, backdrop }: { ranking: PublishedRanking | null; backdrop: Img }) {
   const entries = ranking?.entries ?? []
   const podium = entries.slice(0, 3)
   const runners = entries.slice(3)
@@ -13,8 +14,8 @@ export function Ranking({ ranking }: { ranking: PublishedRanking | null }) {
 
   return (
     <section id="ranking" className="ranking">
-      <div className="ranking-bg" aria-hidden="true">
-        <Image src={rankingBackdrop} alt="" fill sizes="100vw" />
+      <div className="ranking-bg" aria-hidden="true" data-slot="rankingBackdrop">
+        <Image {...imgProps(backdrop, true)} alt="" fill sizes="100vw" />
       </div>
       <div className="shell">
         <header className="section-head">

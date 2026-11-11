@@ -6,7 +6,8 @@ import { Embers } from '@/components/Embers'
 import { ExtLink } from '@/components/ExtLink'
 import { HeroSmoke } from '@/components/HeroSmoke'
 import { BURN_AT } from '@/components/motion/IntroBurn'
-import { hero } from '@/content/site'
+import type { Img } from '@/lib/content-types'
+import { imgProps } from '@/lib/img'
 import { MOTION_OK, gsap, useGSAP } from '@/lib/gsap'
 import { setAmbient, typeBurst, welcome, whoosh } from '@/lib/sound'
 
@@ -16,7 +17,7 @@ function Chars({ word }: { word: string }) {
   ))
 }
 
-export function Hero() {
+export function Hero({ image, alt }: { image: Img; alt: string }) {
   const section = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -72,8 +73,8 @@ export function Hero() {
   return (
     <section id="inicio" ref={section} className="hero">
       <div className="hero-stage">
-        <div className="hero-media" aria-hidden="true">
-          <Image src={hero.src} alt="" fill priority placeholder="blur" sizes="(max-width: 760px) 100vw, 58vw" />
+        <div className="hero-media" aria-hidden="true" data-slot="hero" title={alt}>
+          <Image {...imgProps(image, true)} alt="" fill priority sizes="(max-width: 760px) 100vw, 58vw" />
           <HeroSmoke />
         </div>
         <Embers />

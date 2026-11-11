@@ -2,12 +2,15 @@
 
 import Image from 'next/image'
 import { useRef, useState } from 'react'
-import type { Photo } from '@/content/site'
+import type { Img } from '@/lib/content-types'
+import { imgProps } from '@/lib/img'
 import { whoosh } from '@/lib/sound'
 
 /** 4 colunas no desktop; no celular cada par vira uma coluna (A+B, C+D). */
 const COLS = 4
 const PAIRS = [[0, 1], [2, 3]]
+
+type Photo = { image: Img; alt: string }
 
 export function Gallery({ photos }: { photos: Photo[] }) {
   const dialog = useRef<HTMLDialogElement>(null)
@@ -33,8 +36,8 @@ export function Gallery({ photos }: { photos: Photo[] }) {
             {pair.map((col) => (
               <div key={col} className="g-col">
                 {photos.map((p, i) => i % COLS === col && (
-                  <button key={i} className="tile" type="button" onClick={() => open(i)} aria-label={`Ampliar foto: ${p.alt}`}>
-                    <Image src={p.src} alt={p.alt} placeholder="blur" sizes="(max-width: 760px) 50vw, 25vw" />
+                  <button key={i} className="tile" type="button" onClick={() => open(i)} aria-label={`Ampliar foto: ${p.alt}`} data-slot={`gallery.${i}`}>
+                    <Image {...imgProps(p.image)} alt={p.alt} sizes="(max-width: 760px) 50vw, 25vw" />
                   </button>
                 ))}
               </div>
@@ -62,7 +65,7 @@ export function Gallery({ photos }: { photos: Photo[] }) {
       >
         <button type="button" className="lightbox-close" aria-label="Fechar" onClick={() => dialog.current?.close()}>×</button>
         <button type="button" className="lightbox-nav prev" aria-label="Foto anterior" onClick={() => go(current - 1)}>‹</button>
-        <Image key={current} src={photo.src} alt={photo.alt} sizes="(max-width: 760px) 92vw, 720px" />
+        <Image key={current} {...imgProps(photo.image)} alt={photo.alt} sizes="(max-width: 760px) 92vw, 720px" />
         <button type="button" className="lightbox-nav next" aria-label="Próxima foto" onClick={() => go(current + 1)}>›</button>
       </dialog>
     </>

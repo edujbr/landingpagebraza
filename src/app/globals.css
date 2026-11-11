@@ -1072,3 +1072,16 @@ section { position: relative; }
   .embers, .reel-clone, .preloader, .hero-smoke, .hero-stage::before { display: none !important; }
   .reel { overflow-x: auto; }
 }
+
+/* Pré-visualizador do /admin: sem convite de som e com destaque da foto escolhida no painel */
+html[data-preview] .sound-hint { display: none; }
+html[data-preview] [data-slot] { scroll-margin: 90px; }
+.slot-focus {
+  outline: 4px solid var(--gold) !important;
+  outline-offset: 3px;
+  animation: slotPulse .65s ease-in-out 4 alternate !important;
+  position: relative;
+  z-index: 5;
+}
+@keyframes slotPulse { from { outline-color: var(--gold); box-shadow: 0 0 0 0 rgba(255, 210, 122, .0); } to { outline-color: var(--ember); box-shadow: 0 0 0 12px rgba(233, 123, 52, .35); } }
+
