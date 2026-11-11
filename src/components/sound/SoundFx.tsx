@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useSyncExternalStore } from 'react'
-import { click, getActive, hover, initSound, setSound, subscribe } from '@/lib/sound'
+import { click, getState, hover, initSound, setSound, subscribe, type SoundState } from '@/lib/sound'
 
-export function useSoundEnabled() {
-  return useSyncExternalStore(subscribe, getActive, () => false)
+export function useSoundState() {
+  return useSyncExternalStore<SoundState>(subscribe, getState, () => 'prompt')
 }
 
 function SpeakerIcon({ on }: { on: boolean }) {
@@ -24,22 +24,31 @@ function SpeakerIcon({ on }: { on: boolean }) {
 }
 
 export function SoundToggle() {
-  const on = useSoundEnabled()
+  const state = useSoundState()
+  const on = state === 'on' || state === 'waiting'
   return (
-    <button
-      type="button"
-      className={`sound-toggle${on ? ' is-on' : ''}`}
-      aria-pressed={on}
-      aria-label={on ? 'Desligar efeitos sonoros' : 'Ligar efeitos sonoros'}
-      onClick={() => setSound(!on)}
-    >
-      <SpeakerIcon on={on} />
-      <span className="sound-bars" aria-hidden="true"><i /><i /><i /></span>
-    </button>
+    <span className="sound-wrap">
+      <button
+        type="button"
+        className={`sound-toggle${on ? ' is-on' : ''}${state === 'waiting' ? ' is-waiting' : ''}`}
+        aria-pressed={on}
+        aria-label={on ? 'Desligar o som' : 'Ativar o som'}
+        // Ativado mas ainda bloqueado pelo navegador: o clique libera o som em vez de desligar.
+        onClick={() => setSound(state !== 'on')}
+      >
+        <SpeakerIcon on={on} />
+        <span className="sound-bars" aria-hidden="true"><i /><i /><i /></span>
+      </button>
+      {state === 'prompt' && (
+        <button type="button" className="sound-hint" onClick={() => setSound(true)}>
+          Clique para ativar o som
+        </button>
+      )}
+    </span>
   )
 }
 
-/** Liga o som (padrão) e adiciona os sons de clique e hover em links e botões. */
+/** Prepara o som (desligado até a pessoa ativar) e adiciona os sons de clique e hover em links e botões. */
 export function SoundFx() {
   useEffect(() => {
     initSound()

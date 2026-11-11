@@ -19,9 +19,14 @@ let pref: Pref = null
 let ambient: { stop: () => void } | null = null
 let wantAmbient = false
 
+/**
+ * O som vem desligado (o navegador não deixa tocar antes de um clique mesmo) e a pessoa ativa.
+ * A escolha vale para a aba atual (sessionStorage): ativou, continua ativo ao recarregar.
+ */
 function readPref(): Pref {
   try {
-    const v = localStorage.getItem(KEY)
+    localStorage.removeItem(KEY) // preferência antiga, que deixava o som mudo para sempre
+    const v = sessionStorage.getItem(KEY)
     return v === 'on' || v === 'off' ? v : null
   } catch {
     return null
@@ -35,23 +40,30 @@ export function subscribe(fn: () => void) {
   return () => { listeners.delete(fn) }
 }
 
-/** Som ligado e tocando de fato; antes do navegador liberar o áudio continua `false`. */
-export const getActive = () => enabled && ctx?.state === 'running'
+export type SoundState = 'prompt' | 'off' | 'waiting' | 'on'
+
+/**
+ * `prompt`: desligado e a pessoa ainda não escolheu (mostra o convite "clique para ativar").
+ * `off`: a pessoa desligou. `on`: tocando. `waiting`: ativado nesta aba, mas o navegador
+ * ainda não liberou o áudio depois do recarregamento (libera no primeiro clique, toque ou tecla).
+ */
+export const getState = (): SoundState =>
+  !enabled ? (pref === 'off' ? 'off' : 'prompt') : ctx?.state === 'running' ? 'on' : 'waiting'
 const GESTURES = ['pointerdown', 'touchend', 'keydown', 'click'] as const
 
 /**
- * Som ligado por padrão (só fica mudo se a pessoa desligou antes). Tenta tocar já no carregamento,
- * o que alguns navegadores permitem; nos demais, o primeiro toque, clique ou tecla destrava.
+ * Som desligado por padrão. Se a pessoa já ativou nesta aba, religa: tenta tocar no carregamento
+ * e, se o navegador bloquear, o primeiro toque, clique ou tecla destrava.
  */
 export function initSound() {
   pref = readPref()
-  enabled = pref !== 'off'
+  enabled = pref === 'on'
   emit()
   if (!enabled) return
   const off = () => GESTURES.forEach((ev) => window.removeEventListener(ev, once, true))
   const once = (e: Event) => {
     // O botão de som decide sozinho; destravar aqui faria o clique dele desligar o som.
-    if ((e.target as Element | null)?.closest?.('.sound-toggle')) return
+    if ((e.target as Element | null)?.closest?.('.sound-toggle, .sound-hint')) return
     void unlock().then((ok) => { if (ok) off() })
   }
   GESTURES.forEach((ev) => window.addEventListener(ev, once, true))
@@ -98,7 +110,7 @@ export function welcome() {
 export function setSound(on: boolean) {
   enabled = on
   pref = on ? 'on' : 'off'
-  try { localStorage.setItem(KEY, pref) } catch {}
+  try { sessionStorage.setItem(KEY, pref) } catch {}
   if (on) {
     void unlock().then(() => click())
   } else {

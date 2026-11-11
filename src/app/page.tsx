@@ -4,6 +4,7 @@ import { ExtLink } from '@/components/ExtLink'
 import { Gallery } from '@/components/Gallery'
 import { Ranking } from '@/components/Ranking'
 import { CursorGlow } from '@/components/motion/CursorGlow'
+import { IntroBurn } from '@/components/motion/IntroBurn'
 import { Magnetic } from '@/components/motion/Magnetic'
 import { ScrollScenes } from '@/components/motion/ScrollScenes'
 import { SmoothScroll } from '@/components/motion/SmoothScroll'
@@ -47,6 +48,7 @@ export default async function Home() {
         <div className="pre-logo"><Image src={logo} alt="" width={120} height={120} priority /></div>
         <span className="pre-name">Braza Forte</span>
         <span className="pre-bar"><i /></span>
+        <IntroBurn />
       </div>
       <a className="skip" href="#conteudo">Pular para o conteúdo</a>
       <Topbar />

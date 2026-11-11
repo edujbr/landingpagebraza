@@ -173,8 +173,35 @@ html[data-motion]:not([data-intro="seen"]) .preloader {
   gap: 22px;
   background: radial-gradient(40% 40% at 50% 45%, rgba(233, 123, 52, .18), transparent 70%), var(--black);
   pointer-events: none;
-  animation: preOut .7s cubic-bezier(.7, 0, .2, 1) 1.25s forwards;
+  /* failsafe: se o JS não assumir (conexão muito lenta / erro), a abertura esmaece sozinha.
+     Enquanto isso o logo segue girando, e a queima começa assim que o JS chegar. */
+  animation: preOut .8s ease 5.5s forwards;
 }
+html[data-motion]:not([data-intro="seen"]) .preloader.is-js { animation: none; }
+html[data-motion]:not([data-intro="seen"]) .preloader.is-burning { background: transparent; }
+html[data-motion]:not([data-intro="seen"]) .preloader.is-done { visibility: hidden; }
+.pre-burn { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; opacity: 0; filter: blur(2.5px) saturate(1.2); transform: scale(1.02); }
+.preloader > :not(.pre-burn) { position: relative; z-index: 1; }
+.preloader.is-burning .pre-burn { opacity: 1; }
+.preloader.is-burning .pre-logo { animation: preFlare .5s cubic-bezier(.3, 0, .2, 1) forwards; }
+.preloader.is-burning :is(.pre-name, .pre-bar) { animation: preVanish .3s ease-in forwards; }
+.preloader::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(30% 30% at 50% 45%, rgba(255, 236, 190, .95), rgba(255, 179, 76, .5) 40%, transparent 75%);
+  mix-blend-mode: screen;
+}
+.preloader.is-burning::after { animation: preFlash .7s ease-out forwards; }
+@keyframes preFlare {
+  40% { transform: scale(1.18); filter: brightness(2.2) saturate(1.4); opacity: 1; }
+  to { transform: scale(1.6); filter: brightness(4) blur(10px); opacity: 0; }
+}
+@keyframes preVanish { to { opacity: 0; transform: translateY(10px); filter: blur(4px); } }
+@keyframes preFlash { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
 .pre-logo {
   position: relative;
   width: 120px;
@@ -207,7 +234,7 @@ html[data-motion]:not([data-intro="seen"]) .preloader {
 @keyframes preGlow { from { box-shadow: 0 0 0 0 rgba(233, 123, 52, 0); } 70% { box-shadow: 0 0 80px 10px rgba(233, 123, 52, .6); } to { box-shadow: 0 0 50px 4px rgba(233, 123, 52, .35); } }
 @keyframes preName { from { opacity: 0; letter-spacing: .8em; filter: blur(6px); } to { opacity: 1; letter-spacing: .3em; filter: none; } }
 @keyframes preBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-@keyframes preOut { to { clip-path: inset(0 0 100% 0); visibility: hidden; } }
+@keyframes preOut { to { opacity: 0; filter: blur(12px); visibility: hidden; } }
 @keyframes spin { to { transform: rotate(1turn); } }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
 .brand img { border-radius: 50%; background: var(--white); }
@@ -233,6 +260,36 @@ html[data-motion]:not([data-intro="seen"]) .preloader {
 
 /* Som */
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
+.sound-wrap { position: relative; display: inline-flex; }
+/* Convite para ativar o som: faixa abaixo do botão, com seta apontando para ele */
+.sound-hint {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: -8px;
+  z-index: 2;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 999px;
+  font: 600 .78rem/1 var(--body);
+  letter-spacing: .02em;
+  white-space: nowrap;
+  color: var(--black);
+  background: var(--ember-gradient);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35), 0 0 22px rgba(233, 123, 52, .45);
+  cursor: pointer;
+  animation: hintIn .5s cubic-bezier(.2, .8, .2, 1.2) 2.4s both, hintBob 2.2s ease-in-out 3s infinite;
+}
+.sound-hint::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 22px;
+  border: 7px solid transparent;
+  border-bottom-color: #FFC160;
+}
+.sound-hint:hover { filter: brightness(1.08); }
+@keyframes hintIn { from { opacity: 0; transform: translateY(-8px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes hintBob { 0%, 100% { translate: 0 0; } 50% { translate: 0 4px; } }
 .sound-toggle {
   position: relative;
   display: grid;
@@ -257,6 +314,17 @@ html[data-motion]:not([data-intro="seen"]) .preloader {
 .sound-bars i:nth-child(2) { animation-delay: -.3s; }
 .sound-bars i:nth-child(3) { animation-delay: -.6s; }
 .sound-toggle.is-on .sound-bars { opacity: 1; }
+.sound-toggle.is-waiting .sound-bars i { animation-play-state: paused; }
+.sound-toggle.is-waiting::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px rgba(255, 210, 122, .8);
+  animation: soundPing 1.6s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes soundPing { from { opacity: .9; transform: scale(.92); } to { opacity: 0; transform: scale(1.35); } }
 @keyframes eq { 0%, 100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
 
 /* Hero */
@@ -346,23 +414,28 @@ html[data-motion] :is(.hero-media, .hero-title .hc, .hero-content .eyebrow, .her
 }
 @keyframes cue { 0% { opacity: 0; transform: translateY(0); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(14px); } }
 
-/* Brasas flutuantes */
-.embers { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-.embers i {
+/* Brasas flutuantes (canvas) e brasa acesa no pé do hero */
+.embers { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; mix-blend-mode: screen; }
+.hero-stage::before {
+  content: '';
   position: absolute;
-  bottom: -10px;
-  width: var(--s, 4px);
-  height: var(--s, 4px);
-  border-radius: 50%;
-  background: radial-gradient(circle, #FFE3A1 0%, #FFB34C 40%, rgba(233, 123, 52, 0) 70%);
-  opacity: 0;
-  animation: rise var(--d, 9s) linear var(--delay, 0s) infinite;
+  inset: auto -10% -18% -10%;
+  height: 46%;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(45% 60% at 72% 100%, rgba(255, 150, 60, .38), transparent 70%),
+    radial-gradient(60% 55% at 30% 100%, rgba(198, 76, 52, .28), transparent 72%);
+  mix-blend-mode: screen;
+  filter: blur(8px);
+  transform-origin: 50% 100%;
+  animation: heat 3.4s ease-in-out infinite alternate;
 }
-@keyframes rise {
-  0% { opacity: 0; transform: translate3d(0, 0, 0); }
-  10% { opacity: .9; }
-  70% { opacity: .6; }
-  100% { opacity: 0; transform: translate3d(var(--x, 30px), -95vh, 0); }
+@keyframes heat {
+  0% { opacity: .65; transform: scaleY(.94); }
+  35% { opacity: .95; transform: scaleY(1.04); }
+  60% { opacity: .75; transform: scaleY(.98); }
+  100% { opacity: 1; transform: scaleY(1.07); }
 }
 
 /* Seções */
@@ -996,6 +1069,6 @@ section { position: relative; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
-  .embers, .reel-clone, .preloader, .hero-smoke { display: none !important; }
+  .embers, .reel-clone, .preloader, .hero-smoke, .hero-stage::before { display: none !important; }
   .reel { overflow-x: auto; }
 }

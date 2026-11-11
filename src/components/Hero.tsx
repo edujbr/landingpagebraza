@@ -5,6 +5,7 @@ import { useEffect, useRef, type CSSProperties } from 'react'
 import { Embers } from '@/components/Embers'
 import { ExtLink } from '@/components/ExtLink'
 import { HeroSmoke } from '@/components/HeroSmoke'
+import { BURN_AT } from '@/components/motion/IntroBurn'
 import { hero } from '@/content/site'
 import { MOTION_OK, gsap, useGSAP } from '@/lib/gsap'
 import { setAmbient, typeBurst, welcome, whoosh } from '@/lib/sound'
@@ -37,20 +38,25 @@ export function Hero() {
       const lines = q('.hero-title .line')
       const seen = document.documentElement.dataset.intro === 'seen'
 
+      // Com abertura: o lanche já está aceso por baixo quando o fogo abre a tela (horário desde a navegação).
+      // Sem abertura (já vista na sessão): entra pela cortina lateral.
+      const delay = seen ? 0.15 : Math.max(0.05, BURN_AT - 0.25 - performance.now() / 1000)
+      const mediaIn = seen
+        ? { from: { opacity: 1, clipPath: 'inset(0 0 0 100%)', scale: 1.25 }, to: { clipPath: 'inset(0 0 0 0%)', scale: 1, duration: 1.4, ease: 'power3.inOut', clearProps: 'clipPath,scale' } }
+        : { from: { opacity: 1, scale: 1.22, filter: 'brightness(1.9) saturate(1.3)' }, to: { scale: 1, filter: 'brightness(1) saturate(1)', duration: 1.8, ease: 'power3.out', clearProps: 'scale,filter' } }
+
       gsap.set(lines, { clipPath: 'inset(-40% -10% 0 -10%)' })
-      gsap.timeline({ delay: seen ? 0.15 : 1.35 })
-        .fromTo(media,
-          { opacity: 1, clipPath: 'inset(0 0 0 100%)', scale: 1.25 },
-          {
-            clipPath: 'inset(0 0 0 0%)', scale: 1, duration: 1.4, ease: 'power3.inOut', clearProps: 'clipPath,scale',
-            onStart: () => {
-              welcome()
-              whoosh(true, 0.7)
-            },
-          })
+      gsap.timeline({ delay })
+        .fromTo(media, mediaIn.from, {
+          ...mediaIn.to,
+          onStart: () => {
+            welcome()
+            whoosh(true, 0.7)
+          },
+        })
         .fromTo(q('.hc'),
           { opacity: 1, yPercent: 115, rotate: 8 },
-          { yPercent: 0, rotate: 0, duration: 1.1, ease: 'expo.out', stagger: 0.045, onStart: () => typeBurst(10, 0.045) }, 0.3)
+          { yPercent: 0, rotate: 0, duration: 1.1, ease: 'expo.out', stagger: 0.045, onStart: () => typeBurst(10, 0.045) }, seen ? 0.3 : 0.5)
         .set(lines, { clearProps: 'clipPath' })
         .fromTo(q('.hero-content .eyebrow, .hero-sub, .hero-actions, .hero-facts'),
           { opacity: 0, y: 30 },
