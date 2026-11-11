@@ -43,6 +43,8 @@
 .admin .status { margin: 12px 0 0; font-size: .88rem; }
 .admin .status.ok { color: var(--ok); }
 .admin .status.err { color: var(--err); }
+.admin .contact .status { margin: 4px 0 0; }
+.admin .btn.is-disabled { opacity: .45; pointer-events: none; }
 
 /* Login */
 .admin .login { width: min(360px, 100% - 32px); margin: 12vh auto 0; text-align: center; }

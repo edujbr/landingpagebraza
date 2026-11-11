@@ -170,9 +170,15 @@ export function Preview({ anchor, version, frameRef }: {
     return () => ro.disconnect()
   }, [d.w])
 
-  // Trocar de seção: rola o preview até ela sem recarregar.
+  // Trocar de seção rola o preview até ela; e toda vez que o preview (re)carrega, ele avisa "pronto" e rola de novo.
   useEffect(() => {
-    frameRef.current?.contentWindow?.postMessage({ type: 'braza:scroll', anchor }, location.origin)
+    const go = () => frameRef.current?.contentWindow?.postMessage({ type: 'braza:scroll', anchor }, location.origin)
+    go()
+    const onReady = (e: MessageEvent) => {
+      if (e.origin === location.origin && e.data?.type === 'braza:ready') window.setTimeout(go, 400)
+    }
+    window.addEventListener('message', onReady)
+    return () => window.removeEventListener('message', onReady)
   }, [anchor, frameRef])
 
   return (

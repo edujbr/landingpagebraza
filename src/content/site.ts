@@ -76,6 +76,7 @@ export const STATIC_IMAGES: Record<string, StaticImageData> = {
 export const DEFAULT_CONTENT: SiteContent = {
   hero: { image: 'static:hero-melt', alt: 'Burger com bacon, queijo derretido e cebolinha sobre tábua de madeira' },
   rankingBackdrop: { image: 'static:vibe-07', alt: '' },
+  contact: { whatsapp: '5565920012601', message: 'Olá! Vim pelo site do BRAZA FORTE e quero fazer um pedido.' },
   stories: [
     { label: 'Cardápio', hint: 'Todos os lanches', image: 'static:sig-bacon', link: 'menu' },
     { label: 'Pedir', hint: 'Delivery ou retirada', image: 'static:food-04', link: 'order' },

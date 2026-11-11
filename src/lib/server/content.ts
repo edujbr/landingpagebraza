@@ -1,7 +1,7 @@
 import { DEFAULT_CONTENT, STATIC_IMAGES } from '@/content/site'
 import {
   LIMITS,
-  type Img, type ImageRef, type LibraryImage, type PhotoItem, type ResolvedSite,
+  type ContactInfo, type Img, type ImageRef, type LibraryImage, type PhotoItem, type ResolvedSite,
   type SectionKey, type SignatureItem, type SiteContent, type StoryItem,
 } from '@/lib/content-types'
 import { db } from './db'
@@ -64,6 +64,7 @@ export function getSiteContent(): ResolvedSite {
     reel: c.reel.map((p) => resolveItem(p, 'static:strip-01')),
     signatures: c.signatures.map((s) => resolveItem(s, 'static:sig-bacon')),
     gallery: c.gallery.map((p) => resolveItem(p, 'static:vibe-02')),
+    contact: c.contact,
   } as ResolvedSite
 }
 
@@ -92,9 +93,27 @@ const photo = (p: Record<string, unknown>, where: string, altRequired = true): P
   alt: text(p?.alt, `descrição da foto (${where})`, 160, altRequired),
 })
 
+/**
+ * Aceita o número como a pessoa digitar: "(65) 92001-2601", "65920012601" ou "+55 65 9 2001-2601".
+ * Sem DDI, assume Brasil (55).
+ */
+export function normalizeWhatsapp(raw: unknown): string {
+  let d = typeof raw === 'string' ? raw.replace(/\D/g, '') : ''
+  if (d.length === 10 || d.length === 11) d = `55${d}`
+  return d
+}
+
+function contact(o: Record<string, unknown>): ContactInfo {
+  const whatsapp = normalizeWhatsapp(o?.whatsapp)
+  if (!/^55\d{10,11}$/.test(whatsapp)) throw new Invalid('Número de WhatsApp inválido. Use DDD + número, ex.: (65) 92001-2601.')
+  return { whatsapp, message: text(o?.message, 'mensagem', 300, false) }
+}
+
 function validate(section: SectionKey, v: unknown): SiteContent[SectionKey] {
   const o = v as Record<string, unknown>
   switch (section) {
+    case 'contact':
+      return contact(o)
     case 'hero':
       return photo(o, 'Início')
     case 'rankingBackdrop':

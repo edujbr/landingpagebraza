@@ -2,6 +2,7 @@
 
 import type { Img, ImageRef, LibraryImage, PhotoItem, SignatureItem, SiteContent, StoryItem } from '@/lib/content-types'
 import { LIMITS } from '@/lib/content-types'
+import { whatsappUrl } from '@/lib/store'
 import { ItemTools, PhotoField, move } from './parts'
 
 /** O que todo editor recebe do painel. */
@@ -159,6 +160,47 @@ export function RankingBackdropEditor({ value, onChange, ...p }: EditorProps<'ra
     <div className="grid-1">
       <PhotoField {...photoProps(p, value.image, 'rankingBackdrop', 'Foto de fundo do Ranking', (image) => onChange({ ...value, image }))} ratio="16 / 9" />
       <p className="muted small">Fica escurecida atrás do pódio. Fotos do salão cheio funcionam bem.</p>
+    </div>
+  )
+}
+
+// ---------- WhatsApp ----------
+
+/** Mesma regra do servidor: sem DDI, assume Brasil (55). */
+const normalizePhone = (raw: string) => {
+  const d = raw.replace(/\D/g, '')
+  return d.length === 10 || d.length === 11 ? `55${d}` : d
+}
+
+/** 5565920012601 -> +55 (65) 92001-2601 */
+export function formatPhone(digits: string) {
+  const m = digits.match(/^55(\d{2})(\d{4,5})(\d{4})$/)
+  return m ? `+55 (${m[1]}) ${m[2]}-${m[3]}` : digits
+}
+
+export function ContactEditor({ value, onChange }: EditorProps<'contact'>) {
+  const phone = normalizePhone(value.whatsapp)
+  const valid = /^55\d{10,11}$/.test(phone)
+  return (
+    <div className="grid-1 contact">
+      <Field label="Número do WhatsApp (com DDD)" value={value.whatsapp} max={20} placeholder="(65) 92001-2601"
+        onChange={(whatsapp) => onChange({ ...value, whatsapp })} />
+      <p className={`status ${valid ? 'ok' : 'err'}`}>
+        {valid ? `✓ Vai abrir a conversa com ${formatPhone(phone)}` : 'Digite DDD + número, ex.: (65) 92001-2601'}
+      </p>
+      <Field label="Mensagem que já vem escrita" value={value.message} max={300} multiline
+        placeholder="Olá! Vim pelo site e quero fazer um pedido."
+        onChange={(message) => onChange({ ...value, message })} />
+      <div className="actions">
+        <a className={`btn btn-ghost btn-xs${valid ? '' : ' is-disabled'}`} aria-disabled={!valid}
+          href={valid ? whatsappUrl(phone, value.message) : undefined} target="_blank" rel="noopener noreferrer">
+          Testar no WhatsApp ↗
+        </a>
+      </div>
+      <p className="muted small">
+        Vale para todos os botões de WhatsApp do site: barra de baixo no celular, atalho "WhatsApp", "Chamar no WhatsApp"
+        e os botões que usam o WhatsApp quando não há link de pedido. Lembre de clicar em "Salvar e publicar".
+      </p>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import logo from '@/assets/logo.jpeg'
-import { ExtLink } from '@/components/ExtLink'
+import { ExtLink, LinksProvider } from '@/components/ExtLink'
 import { Gallery } from '@/components/Gallery'
 import { Ranking } from '@/components/Ranking'
 import { CursorGlow } from '@/components/motion/CursorGlow'
@@ -17,7 +17,7 @@ import { marquee, ticker } from '@/content/site'
 import { imgProps } from '@/lib/img'
 import { getSiteContent } from '@/lib/server/content'
 import { getPublishedRanking } from '@/lib/server/ranking'
-import { STORE } from '@/lib/store'
+import { STORE, buildLinks } from '@/lib/store'
 
 export const revalidate = 300
 
@@ -44,10 +44,10 @@ function MarqueeRow({ items, reverse }: { items: string[]; reverse?: boolean }) 
 
 export default async function Home() {
   const ranking = await getPublishedRanking()
-  const { hero, stories, reel, signatures, gallery, rankingBackdrop } = getSiteContent()
+  const { hero, stories, reel, signatures, gallery, rankingBackdrop, contact } = getSiteContent()
 
   return (
-    <>
+    <LinksProvider links={buildLinks(contact)}>
       <div className="preloader" aria-hidden="true">
         <div className="pre-logo"><Image src={logo} alt="" width={120} height={120} priority /></div>
         <span className="pre-name">Braza Forte</span>
@@ -234,6 +234,6 @@ export default async function Home() {
       <CursorGlow />
       <SoundFx />
       <PreviewBridge />
-    </>
+    </LinksProvider>
   )
 }

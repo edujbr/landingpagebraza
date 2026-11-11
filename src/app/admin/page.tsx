@@ -7,7 +7,7 @@ import type { Img, ImageRef, LibraryImage, SectionKey, SiteContent } from '@/lib
 import { ApiError, LibraryModal, Preview, api, useToast } from './parts'
 import { RankingAdmin } from './RankingAdmin'
 import {
-  GalleryEditor, HeroEditor, RankingBackdropEditor, ReelEditor, SignaturesEditor, StoriesEditor, type EditorProps,
+  ContactEditor, GalleryEditor, HeroEditor, RankingBackdropEditor, ReelEditor, SignaturesEditor, StoriesEditor, type EditorProps,
 } from './sections'
 
 type State = { content: SiteContent; images: Record<ImageRef, Img> }
@@ -20,6 +20,7 @@ const TABS: { key: TabKey; label: string; anchor: string; where: string; icon: s
   { key: 'signatures', label: 'Os que fazem fila', anchor: 'assinaturas', icon: '🍔', where: 'Os cards dos lanches da casa: foto, nome e descrição.' },
   { key: 'rankingBackdrop', label: 'Ranking', anchor: 'ranking', icon: '🏆', where: 'Pódio dos clientes que mais pediram e a foto de fundo da seção.' },
   { key: 'gallery', label: 'Galeria', anchor: 'galeria', icon: '▦', where: 'O mosaico "Mesa cheia, casa quente".' },
+  { key: 'contact', label: 'WhatsApp', anchor: 'visite', icon: '💬', where: 'Número e mensagem de todos os botões de WhatsApp do site.' },
   { key: 'password', label: 'Senha', anchor: 'inicio', icon: '🔑', where: 'Senha de acesso a este painel.' },
 ]
 
@@ -30,6 +31,7 @@ const EDITORS: { [K in SectionKey]: (p: EditorProps<K>) => ReactNode } = {
   signatures: SignaturesEditor,
   gallery: GalleryEditor,
   rankingBackdrop: RankingBackdropEditor,
+  contact: ContactEditor,
 }
 
 export default function AdminPage() {

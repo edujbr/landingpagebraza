@@ -11,6 +11,9 @@ export type Img = { src: string; width: number; height: number; blurDataURL?: st
 
 export type PhotoItem = { image: ImageRef; alt: string }
 export type StoryItem = { label: string; hint: string; image: ImageRef; link?: LinkKey; href?: string }
+/** WhatsApp: número com DDI+DDD (só dígitos) e a mensagem que já vem escrita na conversa. */
+export type ContactInfo = { whatsapp: string; message: string }
+
 export type SignatureItem = { name: string; tag: string; seal: string; description: string; image: ImageRef; alt: string }
 
 export type SiteContent = {
@@ -20,6 +23,7 @@ export type SiteContent = {
   signatures: SignatureItem[]
   gallery: PhotoItem[]
   rankingBackdrop: PhotoItem
+  contact: ContactInfo
 }
 export type SectionKey = keyof SiteContent
 

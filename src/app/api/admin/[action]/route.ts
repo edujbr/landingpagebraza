@@ -31,7 +31,12 @@ async function authed() {
 function state() {
   const content = getContent()
   const refs = new Set<string>()
-  for (const v of Object.values(content)) for (const item of [v].flat()) refs.add((item as { image: string }).image)
+  for (const v of Object.values(content)) {
+    for (const item of [v].flat()) {
+      const ref = (item as { image?: unknown }).image
+      if (typeof ref === 'string') refs.add(ref)
+    }
+  }
   const images = Object.fromEntries([...refs].map((r) => [r, resolveImage(r)]))
   return { content, images }
 }
